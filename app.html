@@ -154,6 +154,61 @@
   .streak-mini b{color:var(--ochre-dk)}
 
   /* QUICK ROW */
+  /* ============ RITUAL PLAYER ============
+     Full-screen, one step at a time. Each step brings its own color world.
+     It waits: the timer runs out and stops, it never pushes her forward. */
+  #player{
+    position:fixed;inset:0;z-index:500;display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    padding:36px 28px calc(30px + env(safe-area-inset-bottom));
+    text-align:center;max-width:440px;margin:0 auto;
+  }
+  #player.on{display:flex}
+  #pbg{position:absolute;inset:0;z-index:0;transition:background .7s ease}
+  #pmotif{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none}
+  #player>*:not(#pbg):not(#pmotif){position:relative;z-index:2}
+  #pmotif b{position:absolute;display:block}
+  #pmotif b.drop{border-radius:50% 50% 50% 0;transform:rotate(45deg);animation:mdrop linear infinite}
+  @keyframes mdrop{0%{transform:translateY(-10vh) rotate(45deg);opacity:0}
+    14%{opacity:.8}86%{opacity:.8}100%{transform:translateY(106vh) rotate(45deg);opacity:0}}
+  #pmotif b.ember{border-radius:50%;animation:mrise linear infinite}
+  @keyframes mrise{0%{transform:translateY(14vh) scale(.7);opacity:0}
+    20%{opacity:.85}100%{transform:translateY(-104vh) scale(1.25);opacity:0}}
+  #pmotif b.ring{border-radius:50%;border:1.5px solid currentColor;background:none!important;animation:mring ease-out infinite}
+  @keyframes mring{0%{transform:scale(.25);opacity:.7}100%{transform:scale(2.4);opacity:0}}
+  #pmotif b.pill{border-radius:99px}
+  #pmotif b.star{border-radius:50%}
+  #pmotif b.leaf2{border-radius:0 100% 0 100%;animation:mdrift linear infinite}
+  @keyframes mdrift{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(106vh) rotate(300deg)}}
+  #pmotif b.grain{border-radius:60% 0 60% 60%}
+  .p-lab{font-family:'Nunito';font-size:10.5px;font-weight:800;letter-spacing:3.2px;text-transform:uppercase;opacity:.62}
+  .p-title{font-family:'Playfair Display',serif;font-size:34px;line-height:1.14;font-weight:700;margin:18px 0 11px}
+  .p-hint{font-size:14.5px;line-height:1.6;opacity:.78;max-width:27ch;margin:0 auto}
+  .p-ring{position:relative;width:126px;height:126px;margin:26px 0 4px}
+  .p-ring svg{transform:rotate(-90deg)}
+  .p-ring .rt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Playfair Display',serif;font-size:29px;font-weight:700}
+  .p-acts{width:100%;max-width:310px;margin-top:26px}
+  .p-btn{width:100%;border:none;border-radius:14px;padding:16px;font-family:'Nunito';
+    font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px}
+  .p-btn:active{transform:scale(.98)}
+  .p-skip{background:none;border:none;cursor:pointer;font-family:'Nunito';font-size:10.5px;
+    font-weight:800;letter-spacing:2.2px;text-transform:uppercase;opacity:.55;padding:11px}
+  .p-prog{display:flex;gap:6px;justify-content:center;margin-top:20px}
+  .p-prog i{width:24px;height:3px;border-radius:2px;background:currentColor;opacity:.22}
+  .p-prog i.done{opacity:.85}
+  .p-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px;max-width:300px}
+  .p-chip{border:1.5px solid currentColor;background:rgba(255,255,255,.1);border-radius:22px;
+    padding:10px 15px;font-family:'Nunito';font-weight:700;font-size:13.5px;cursor:pointer;color:inherit}
+  .p-chip.on{background:currentColor}
+  /* ritual launcher chips */
+  .rits{display:flex;gap:9px;overflow-x:auto;margin:9px 0 2px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .ritc{flex:0 0 auto;background:var(--white);border:1px solid var(--line);border-left:3px solid var(--mauve);
+    border-radius:14px;padding:11px 14px;cursor:pointer;min-width:126px;text-align:left;box-shadow:var(--shadow-sm)}
+  .ritc .rl{font-family:'Nunito';font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--brown-mid)}
+  .ritc .rn{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-top:3px;color:var(--espresso)}
+  .ritc .rm{font-size:11px;color:var(--brown-mid);margin-top:2px}
+
   /* toast — the app's confirmation channel, replacing the mascot speech bubble */
   #toast{
     position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));
@@ -403,6 +458,7 @@
     <!-- NOW -->
     <section class="panel active" id="panel-now">
       <div class="sky" id="sky" onclick="openGarden()"></div>
+      <div class="rits" id="rits"></div>
       <div class="bloom" id="bloom"></div>
       <div id="nowBody"></div>
       <button class="couch-btn" onclick="openCouch()">🛋️ I'm stuck on the couch<span class="cse">one tiny thing, zero deciding</span></button>
@@ -507,6 +563,27 @@
 
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
 <div id="toast"></div>
+<div id="player">
+  <div id="pbg"></div>
+  <div id="pmotif"></div>
+  <div class="p-lab" id="pLab">STEP 1 OF 3</div>
+  <div class="p-title" id="pTitle"></div>
+  <div class="p-hint" id="pHint"></div>
+  <div class="p-ring" id="pRing" style="display:none">
+    <svg width="126" height="126">
+      <circle cx="63" cy="63" r="59" fill="none" stroke="currentColor" stroke-opacity=".16" stroke-width="5"/>
+      <circle id="pRingFill" cx="63" cy="63" r="59" fill="none" stroke="currentColor" stroke-width="5"
+              stroke-linecap="round" stroke-dasharray="370.7" stroke-dashoffset="0"/>
+    </svg>
+    <div class="rt" id="pRingTime">0:00</div>
+  </div>
+  <div class="p-chips" id="pChips" style="display:none"></div>
+  <div class="p-acts">
+    <button class="p-btn" id="pGo" onclick="ritGo()">Done</button>
+    <button class="p-skip" id="pSkip" onclick="ritAdvance(0)">skip this one</button>
+  </div>
+  <div class="p-prog" id="pProg"></div>
+</div>
 
 <script>
 /* ============ DATA LAYER ============ */
@@ -630,7 +707,13 @@ function val(id){return document.getElementById(id)?.value.trim()||'';}
 function val2(id){return document.getElementById(id)?.value||'';}
 function emptyState(em,t){return `<div class="empty"><div class="em">${em}</div><p>${escq(t)}</p></div>`;}
 function showModal(h){document.getElementById('modal').innerHTML=h;document.getElementById('modalBg').classList.add('open');}
-function closeModal(){stopBreath&&stopBreath();stopMic&&stopMic();stopPulse&&stopPulse();document.getElementById('modalBg').classList.remove('open');}
+/* MODAL_THEN lets a ritual step hand off to an existing modal — burnDay(),
+   gratitude3() — and pick the sequence back up when it closes, so the ritual
+   reuses the real save logic instead of reimplementing it. */
+let MODAL_THEN=null;
+function closeModal(){stopBreath&&stopBreath();stopMic&&stopMic();stopPulse&&stopPulse();
+  document.getElementById('modalBg').classList.remove('open');
+  const f=MODAL_THEN;MODAL_THEN=null;if(f)setTimeout(f,180);}
 function copyText(t){navigator.clipboard?.writeText(t).then(()=>toast('Copied ✓'),()=>toast('Copy failed'));}
 function toast(m){const d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:#7A4A58;color:#FBE7EB;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:700;z-index:300;box-shadow:0 6px 18px rgba(80,40,55,.35)';document.body.appendChild(d);setTimeout(()=>d.remove(),1600);}
 function cadenceLabel(c){return{1:'day',2:'2 days',7:'week',14:'2 weeks',30:'month',32:'month',35:'month',42:'6 weeks',90:'3 months',365:'year'}[c]||c+' days';}
@@ -823,6 +906,154 @@ function buildSkyRow(){
     +chip(t==='day','Day',"setSky('t','day')")+chip(t==='dusk','Dusk',"setSky('t','dusk')")
     +chip(t==='night','Night',"setSky('t','night')")
     +`</div>`;
+}
+
+/* ============ RITUAL ENGINE ============
+   A sequence with a beginning and an end, not a checklist. Rules, from Fabulous
+   but corrected for how she actually works:
+     - it WAITS. The timer runs out and stops; advancing is always her tap.
+     - every step is skippable and the ritual still counts. No partial-credit shame.
+     - it ENDS. The last screen has exactly one button.
+   Steps drive the functions that already exist rather than reimplementing them. */
+const RW={
+  meds  :{c1:'#3A1A2A',c2:'#8E4A66',ink:'#FFE8F0',ac:'#FFB3CE',mo:'pill',  mc:'#FFD9E6',n:14},
+  water :{c1:'#08334D',c2:'#2E86B0',ink:'#E4F6FF',ac:'#7FD8FF',mo:'drop',  mc:'#9FE4FF',n:24},
+  plate :{c1:'#4A3208',c2:'#C4922E',ink:'#FFF4DC',ac:'#FFD980',mo:'ring',  mc:'#FFE0A0',n:7},
+  energy:{c1:'#2A1848',c2:'#6E4A9E',ink:'#F0E6FF',ac:'#C4A0FF',mo:'star',  mc:'#DCC8FF',n:32},
+  steel :{c1:'#141C24',c2:'#3E5560',ink:'#E4EEF4',ac:'#9FC4D4',mo:'star',  mc:'#B8D4E0',n:13},
+  fire  :{c1:'#2E0A04',c2:'#C4400F',ink:'#FFE4D0',ac:'#FFA34A',mo:'ember', mc:'#FFB05B',n:26},
+  grain :{c1:'#3A2808',c2:'#A8822E',ink:'#FFF6DC',ac:'#FFDE8A',mo:'grain', mc:'#FFE8A8',n:20},
+  sage  :{c1:'#0E2416',c2:'#3E7A4E',ink:'#E4F7E8',ac:'#8FE0A4',mo:'leaf2', mc:'#A8E8BC',n:18},
+  night :{c1:'#080B16',c2:'#1E2648',ink:'#E4EAFC',ac:'#A8BEEC',mo:'star',  mc:'#D0DCFF',n:42}
+};
+const RITUALS={
+  commute:{n:'Commute',m:'3 steps · 4 min',lab:'Leave work at work',steps:[
+    {t:'Work stays in the car.',h:'Say it out loud if you can. Then take fifteen slow seconds.',sec:15,w:'steel'},
+    {t:'Burn the day.',h:'Name the thing still gripping you. You will not keep it.',w:'fire',modal:()=>burnDay()},
+    {t:'Three words of gratitude.',h:'Small ones count. Especially the small ones.',w:'grain',modal:()=>gratitude3()}]},
+  morning:{n:'Morning',m:'4 steps · 3 min',lab:'Start the day',steps:[
+    {t:'Take your meds.',h:'The one that is already automatic. Confirm and move on.',w:'meds',act:'meds'},
+    {t:'Drink a full glass of water.',h:'All of it, before you put the glass back down.',sec:40,w:'water',act:'water'},
+    {t:'Two minutes on the plate.',h:'Stand still. That is the entire ask.',sec:120,w:'plate',act:'vibration'},
+    {t:'How much gas do you have?',h:'Pick honestly, not hopefully.',w:'energy',energy:1}]},
+  evening:{n:'Evening',m:'2 steps · 1 min',lab:'Close the day',steps:[
+    {t:'How did your body feel?',h:'Energy, head, gut. Ten seconds, and it helps spot patterns.',w:'sage',go:'care'},
+    {t:'That is the day closed.',h:'Nothing else is being asked of you tonight.',w:'night'}]}
+};
+let RIT=null,rIdx=0,rTimer=null,rLeft=0,rDid=0;
+
+function openRitual(k){
+  RIT=RITUALS[k];if(!RIT)return;rIdx=0;rDid=0;
+  document.getElementById('player').classList.add('on');
+  drawRitStep();
+}
+function paintRitWorld(w){
+  const p=document.getElementById('player');
+  document.getElementById('pbg').style.background=
+    `radial-gradient(125% 82% at 50% -12%, ${w.c2} 0%, ${w.c1} 78%)`;
+  p.style.color=w.ink;
+  let h='';
+  for(let i=0;i<w.n;i++){
+    const base=w.mo==='ring'?46:w.mo==='star'?2.4:w.mo==='pill'?11:8;
+    const sz=base*(0.6+starSeed(i*7)*0.9);
+    const dur=w.mo==='ring'?(3.4+starSeed(i*3)*2.4):(w.mo==='ember'?(4.5+starSeed(i*3)*3.5):(5.5+starSeed(i*3)*4));
+    const anim=/drop|ember|ring|leaf2/.test(w.mo)
+      ?`animation-duration:${dur.toFixed(2)}s;animation-delay:-${(starSeed(i*11)*dur).toFixed(2)}s;`:'';
+    const top=/drop|leaf2|ember/.test(w.mo)?0:(starSeed(i*17)*90+3);
+    h+=`<b class="${w.mo}" style="left:${(starSeed(i*13)*96).toFixed(1)}%;top:${top?top.toFixed(1)+'%':'0'};`
+      +`width:${sz.toFixed(1)}px;height:${(w.mo==='pill'?sz*0.5:sz).toFixed(1)}px;`
+      +`background:${w.mc};color:${w.mc};opacity:${(0.2+starSeed(i*19)*0.48).toFixed(2)};${anim}"></b>`;
+  }
+  document.getElementById('pmotif').innerHTML=h;
+}
+function drawRitStep(){
+  clearInterval(rTimer);
+  if(rIdx>=RIT.steps.length)return drawRitDone();
+  const st=RIT.steps[rIdx], w=RW[st.w];
+  paintRitWorld(w);
+  document.getElementById('pLab').textContent=`STEP ${rIdx+1} OF ${RIT.steps.length}`;
+  document.getElementById('pTitle').textContent=st.t;
+  document.getElementById('pHint').textContent=st.h;
+  const go=document.getElementById('pGo');
+  go.style.background=w.ac;go.style.color=w.c1;
+  go.textContent=st.modal?'Open it':st.go?'Take me there':'Done';
+  document.getElementById('pSkip').style.display='';
+  document.getElementById('pProg').innerHTML=RIT.steps.map((_,i)=>`<i class="${i<=rIdx?'done':''}"></i>`).join('');
+
+  /* the energy step renders the real mode picker inline */
+  const chips=document.getElementById('pChips');
+  if(st.energy){
+    const cur=todayMode();
+    chips.innerHTML=Object.keys(MODES).map(k=>
+      `<button class="p-chip${cur===k?' on':''}" onclick="ritEnergy('${k}')">${MODES[k].emoji} ${MODES[k].label}</button>`).join('');
+    chips.style.display='';go.textContent=cur?'Done':'Skip for now';
+  }else{chips.innerHTML='';chips.style.display='none';}
+
+  const ring=document.getElementById('pRing');
+  if(st.sec>0){
+    ring.style.display='';rLeft=st.sec;
+    const fill=document.getElementById('pRingFill');
+    const tick=()=>{
+      fill.style.strokeDashoffset=(370.7*(1-rLeft/st.sec)).toFixed(1);
+      document.getElementById('pRingTime').textContent=Math.floor(rLeft/60)+':'+String(rLeft%60).padStart(2,'0');
+    };
+    tick();
+    rTimer=setInterval(()=>{
+      rLeft=Math.max(0,rLeft-1);tick();
+      if(rLeft<=0){clearInterval(rTimer);go.textContent='Done';}   /* stops. never advances by itself. */
+    },1000);
+  }else ring.style.display='none';
+}
+function ritEnergy(k){setMode(k);drawRitStep();}
+function ritAdvance(credit){
+  if(credit)rDid++;
+  rIdx++;drawRitStep();
+}
+/* the primary button: run the step's real action, then move on */
+function ritGo(){
+  if(rIdx<0){closeRitual();return;}
+  const st=RIT.steps[rIdx];
+  if(st.modal){MODAL_THEN=()=>ritAdvance(1);st.modal();return;}
+  if(st.go){closeRitual();go(st.go);return;}
+  if(st.act){
+    const day=getDay();
+    if(st.act==='water'){day.water=(day.water||0)+1;saveDay(day);creditShowedUp(day);saveDay(day);}
+    else if(!day[st.act]){tapSeed(st.act);}
+  }
+  ritAdvance(1);
+}
+function drawRitDone(){
+  clearInterval(rTimer);
+  const w=RW.night;paintRitWorld(w);
+  const all=RIT.steps.length;
+  document.getElementById('pLab').textContent='COMPLETE';
+  document.getElementById('pTitle').textContent=RIT.n==='Commute'?'Work is behind you.':'That is the whole ritual.';
+  document.getElementById('pHint').textContent=
+    rDid===0?'You showed up for it. That counts on its own.'
+    :`${rDid} of ${all} done — and skipping the rest cost you nothing.`;
+  document.getElementById('pRing').style.display='none';
+  document.getElementById('pChips').style.display='none';
+  const go=document.getElementById('pGo');
+  go.textContent='Close';go.style.background=w.ac;go.style.color=w.c1;
+  document.getElementById('pSkip').style.display='none';   /* one affordance. */
+  document.getElementById('pProg').innerHTML=RIT.steps.map(()=>'<i class="done"></i>').join('');
+  logEvent('ritual',RIT.n);creditShowedUp(getDay());saveDay(getDay());
+  rIdx=-1;
+}
+function closeRitual(){
+  clearInterval(rTimer);
+  document.getElementById('player').classList.remove('on');
+  const n=RIT?RIT.n:'';RIT=null;
+  buildMusts();refreshDay();buildStreak();buildNow();
+  if(n)say('Ritual done. ✓');
+}
+function buildRits(){
+  const el=document.getElementById('rits');if(!el)return;
+  const h=new Date().getHours();
+  const order=h>=20?['evening','commute','morning']:h<11?['morning','commute','evening']:['commute','morning','evening'];
+  el.innerHTML=order.map(k=>{const r=RITUALS[k];
+    return `<button class="ritc" onclick="openRitual('${k}')"><div class="rl">${r.lab}</div>`
+      +`<div class="rn">${r.n}</div><div class="rm">${r.m}</div></button>`;}).join('');
 }
 
 /* ============ THE CONSTELLATION ============
@@ -1608,7 +1839,7 @@ function makeIcon(){try{const c=document.createElement('canvas');c.width=c.heigh
 (function init(){
   const now=new Date();
   document.getElementById('dateBox').innerHTML=now.toLocaleDateString('en-US',{weekday:'long'})+'<br>'+now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  applyTheme();makeIcon();autoCreditGraduated();buildNow();buildWorkStrip();buildSkyRow();checkWelcomeBack();
+  applyTheme();makeIcon();autoCreditGraduated();buildNow();buildWorkStrip();buildSkyRow();buildRits();checkWelcomeBack();
   /* re-theme when the app is reopened later in the day, and on the hour */
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)applyTheme();});
   setInterval(applyTheme,15*60*1000);
