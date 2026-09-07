@@ -209,6 +209,9 @@
   .ritc .rn{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-top:3px;color:var(--espresso)}
   .ritc .rm{font-size:11px;color:var(--brown-mid);margin-top:2px}
 
+  .wxline{font-family:'Nunito';font-size:10px;font-weight:800;letter-spacing:2px;
+    text-transform:uppercase;color:var(--brown-mid);text-align:center;padding:7px 0 1px}
+
   /* letters to future you */
   .letter-due{background:linear-gradient(150deg,rgba(212,168,67,.24),var(--white));
     border:1px solid var(--gold);border-radius:var(--r);padding:15px 16px;margin-top:10px;
@@ -479,6 +482,7 @@
     <!-- NOW -->
     <section class="panel active" id="panel-now">
       <div class="sky" id="sky" onclick="openGarden()"></div>
+      <div class="wxline" id="wxLine"></div>
       <div class="rits" id="rits"></div>
       <div id="onThisDay"></div>
       <div id="letters"></div>
@@ -918,7 +922,53 @@ const THEMES={
 /* a room owns its accent across every ground, so it stays recognizable */
 const ROOM_ACCENT={now:null,people:'#D98A72',life:'#7A9EC4',care:'#6E9E72',learn:'#B98AD9'};
 
-function todPhase(){const h=new Date().getHours();return h>=7&&h<17?'day':h>=17&&h<21?'dusk':'night';}
+/* ============ REAL SUN, REAL WEATHER ============
+   One keyless Open-Meteo call for West Seattle gives actual sunrise/sunset and
+   current conditions. The app then goes dark when it is ACTUALLY dark — which in
+   December here is 4:20pm — instead of at an arbitrary hour. Rain is not just
+   decoration: it promotes the indoor walk over the outdoor one.
+   Cached for an hour, and everything degrades to clock hours if the call fails. */
+const WX_URL='https://api.open-meteo.com/v1/forecast?latitude=47.56&longitude=-122.39'
+  +'&current=precipitation,weather_code,temperature_2m&daily=sunrise,sunset&timezone=auto&forecast_days=1';
+function wx(){const w=DB.get('lm_wx',null);return (w&&typeof w==='object')?w:null;}
+function wxFresh(){const w=wx();return w&&w.t&&(Date.now()-w.t)<60*60*1000;}
+function fetchWx(){
+  if(wxFresh()||!navigator.onLine)return;
+  fetch(WX_URL).then(r=>r.ok?r.json():null).then(j=>{
+    if(!j||!j.daily||!j.current)return;
+    DB.set('lm_wx',{t:Date.now(),
+      sunrise:(j.daily.sunrise||[])[0]||'', sunset:(j.daily.sunset||[])[0]||'',
+      precip:+j.current.precipitation||0, code:+j.current.weather_code||0,
+      temp:j.current.temperature_2m});
+    applyTheme();buildNow();
+  }).catch(()=>{});   /* offline is fine — the cache and the clock both still work */
+}
+const WET=c=>(c>=51&&c<=67)||(c>=80&&c<=82)||(c>=95&&c<=99);
+const SNOWY=c=>(c>=71&&c<=77)||c===85||c===86;
+function isWet(){const w=wx();if(!w)return false;return w.precip>0||WET(w.code)||SNOWY(w.code);}
+
+/* real solar phase, falling back to fixed hours */
+function todPhase(){
+  const w=wx(),now=new Date();
+  if(w&&w.sunrise&&w.sunset){
+    const rise=new Date(w.sunrise),set=new Date(w.sunset);
+    if(!isNaN(rise)&&!isNaN(set)){
+      if(now<rise||now>new Date(set.getTime()+40*60000))return'night';
+      if(now>=new Date(set.getTime()-70*60000))return'dusk';
+      return'day';
+    }
+  }
+  const h=now.getHours();return h>=7&&h<17?'day':h>=17&&h<21?'dusk':'night';
+}
+function wxLine(){
+  const w=wx();if(!w)return'';
+  const t=w.temp==null?'':Math.round(w.temp*9/5+32)+'°F';
+  const sky=SNOWY(w.code)?'snow':WET(w.code)||w.precip>0?'rain':w.code<=1?'clear':w.code<=3?'cloud':w.code<=48?'fog':'—';
+  const set=w.sunset?new Date(w.sunset):null;
+  const dark=set&&!isNaN(set)?(new Date()>set?'dark since ':'sunset ')
+    +set.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).replace(' ','').toLowerCase():'';
+  return `${sky}${t?' · '+t:''}${dark?' · '+dark:''}`;
+}
 function themeNow(){
   const s=DB.get('lm_theme_season','')||SEASON_OF[new Date().getMonth()];
   return THEMES[s][DB.get('lm_theme_tod','')||todPhase()];
@@ -1255,6 +1305,10 @@ function lifetimeStars(){
   const pb=DB.get('lm_pb',{}); n+=Object.keys(pb||{}).length;
   return n;
 }
+function buildWxLine(){
+  const el=document.getElementById('wxLine');if(!el)return;
+  el.textContent=wxLine();
+}
 function buildSky(){
   const el=document.getElementById('sky');if(!el)return;
   const all=skyStars(), shown=all.slice(0,SKY_MAX), total=lifetimeStars();
@@ -1277,7 +1331,7 @@ function buildSky(){
   el.innerHTML=h;
 }
 /* Single seam for "the day changed, re-render it." */
-function refreshDay(){buildBloom();buildSky();}
+function refreshDay(){buildBloom();buildSky();buildWxLine();}
 
 /* ============ FEEDBACK ============
    say() used to write into the mascot's speech bubble, which made the bubble the
@@ -1752,11 +1806,17 @@ function buildCare(){
     <div class="lrow"><span class="lcap">Time</span>${chip(!moveTime,'Any','setMT(null)')}${chip(moveTime===10,'≤10m','setMT(10)')}${chip(moveTime===20,'≤20m','setMT(20)')}${chip(moveTime===30,'30m+','setMT(30)')}</div>`;
 
   const isWalk=moveType==='walk';
-  /* West Seattle in December: the outdoor walk needs an indoor twin, not a dead end */
-  const rain=isWalk&&movePool('walk').length
-    ? `<div class="rainline">🌧️ Pouring out? Walk indoors instead:</div>`+onePickHtml('walk')
+  /* West Seattle in December: the outdoor walk needs an indoor twin, not a dead end.
+     When it is ACTUALLY raining the indoor one goes first — the weather decides,
+     not a guess in the copy. */
+  const wet=isWet(), hasIndoor=isWalk&&movePool('walk').length;
+  const indoor=hasIndoor
+    ? `<div class="rainline">${wet?'🌧️ It is raining out there. Walk indoors:':'🌧️ Pouring out? Walk indoors instead:'}</div>`+onePickHtml('walk')
     : '';
-  const main=isWalk?walkCardHtml()+rain:energyBar+onePickHtml(moveType);
+  const main=isWalk
+    ? (wet&&hasIndoor ? indoor+`<div class="rainline">Or go anyway — it is Seattle:</div>`+walkCardHtml()
+                      : walkCardHtml()+indoor)
+    : energyBar+onePickHtml(moveType);
   const bounce=isWalk?'':`<div class="bounceline" onclick="toggleBounce()">${moveBounce?'☑':'☐'} include the bouncy stuff</div>`;
 
   const user=userMoves();
@@ -1996,9 +2056,10 @@ function makeIcon(){try{const c=document.createElement('canvas');c.width=c.heigh
   const now=new Date();
   document.getElementById('dateBox').innerHTML=now.toLocaleDateString('en-US',{weekday:'long'})+'<br>'+now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   applyTheme();makeIcon();autoCreditGraduated();buildNow();buildWorkStrip();buildSkyRow();buildRits();checkWelcomeBack();
+  fetchWx();
   /* re-theme when the app is reopened later in the day, and on the hour */
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)applyTheme();});
-  setInterval(applyTheme,15*60*1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){fetchWx();applyTheme();}});
+  setInterval(()=>{fetchWx();applyTheme();},15*60*1000);
 })();
 if('serviceWorker' in navigator){
   const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});`;
