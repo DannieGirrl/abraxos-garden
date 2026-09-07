@@ -209,6 +209,16 @@
   .ritc .rn{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-top:3px;color:var(--espresso)}
   .ritc .rm{font-size:11px;color:var(--brown-mid);margin-top:2px}
 
+  /* the route on the walk card */
+  .wk-r{background:var(--white);border-radius:12px;padding:11px 13px;margin-top:11px}
+  .wk-r b{display:block;font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--espresso)}
+  .wk-r span{display:block;font-family:'Nunito';font-size:9.5px;font-weight:800;letter-spacing:1.6px;
+    text-transform:uppercase;color:var(--moss-dk);margin-top:4px}
+  .wk-r em{display:block;font-family:'Lora',serif;font-size:13px;color:var(--brown-mid);margin-top:6px;line-height:1.5}
+  .wk-sit{margin-top:9px;padding-top:9px;border-top:1px solid var(--line);font-size:12.5px;color:var(--brown-mid);line-height:1.45}
+  .wk-sit b{color:var(--espresso)}
+  .wk-areas{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+
   .wxline{font-family:'Nunito';font-size:10px;font-weight:800;letter-spacing:2px;
     text-transform:uppercase;color:var(--brown-mid);text-align:center;padding:7px 0 1px}
 
@@ -1694,11 +1704,70 @@ function walkPick(){
 }
 function reshuffleWalk(){walkSeed=(walkSeed===null?0:walkSeed)+1;buildCare();}
 function didWalk(){markMovement();buildCare();say('A walk counts every bit as much as the rest. 🌿');}
+/* ============ ROUTES ============
+   Real loops from the Alaska Junction. Seeded from research, EDITABLE — she lives
+   here and will know better than any source. flat/gentle/hilly is stated as plain
+   terrain fact so she can pick by mood, never as effort or difficulty.
+   `far` means it needs a bus or a car; those are never picked on a low-energy day. */
+/* Three places, short or long, and every one has somewhere to SIT partway —
+   which is how she actually walks: out, sit a while, back. */
+const AREAS={junction:{l:'Junction',e:'🏘️'},beach:{l:'Beach',e:'🌊'},park:{l:'Park',e:'🌲'}};
+const WALK_SEED=[
+  {a:'junction',len:'short',min:15,t:'flat',lit:1,
+   n:'Itto\'s down to Box Bar',sit:'Any bench along California',
+   see:'Storefronts and Easy Street Records. Your usual, and it counts.'},
+  {a:'junction',len:'short',min:22,t:'gentle',lit:0,
+   n:'The Genesee tree streets',sit:'Ercolini Park',
+   see:'Craftsman houses from the 1910s and the big street maples. Almost no traffic.'},
+  {a:'junction',len:'long',min:35,t:'flat',lit:1,
+   n:'South to Morgan Junction',sit:'Morgan Junction Park',
+   see:'Straight down California. Tree-planted medians and a quieter row of shops.'},
+  {a:'junction',len:'long',min:45,t:'hilly',lit:0,
+   n:'Admiral ridge to the viewpoint',sit:'Hamilton Viewpoint',
+   see:'Olympics from Sunset Ave, the bay and downtown from the viewpoint.'},
+  {a:'beach',len:'short',min:25,t:'flat',lit:1,drive:1,
+   n:'A stretch of the Alki promenade',sit:'A bench facing the water',
+   see:'Flat paved path, the Sound, the skyline across it.'},
+  {a:'beach',len:'long',min:50,t:'flat',lit:1,drive:1,
+   n:'Alki out to the lighthouse',sit:'The point at Alki Light',
+   see:'Two and a half flat miles. Ferries, freighters, Olympics on a clear day.'},
+  {a:'park',len:'short',min:30,t:'gentle',lit:1,drive:1,
+   n:'Lincoln Park bluff top',sit:'A bluff bench over the ferry lane',
+   see:'Big trees, water through the trunks, the Vashon boat crossing.'},
+  {a:'park',len:'long',min:60,t:'gentle',lit:1,drive:1,
+   n:'Lincoln Park down to the seawall',sit:'The seawall benches',
+   see:'Switchbacks down, then flat along the water and back up.'},
+  {a:'park',len:'long',min:80,t:'hilly',lit:0,drive:1,
+   n:'Schmitz Preserve old growth',sit:'Beside the creek in the ravine',
+   see:'Real old-growth firs and cedars, moss on everything. Feels nowhere near a city.'}
+];
+function walks(){const w=DB.get('lm_walks',null);return Array.isArray(w)&&w.length?w:WALK_SEED;}
+let walkArea=null;                     /* null = let the app choose */
+function setWalkArea(a){walkArea=(walkArea===a?null:a);buildCare();}
+/* honest filtering: no unlit routes after dark, no driving or hills on a low day */
+function pickWalk(){
+  const dark=todPhase()==='night', wet=isWet(), low=todayMode()==='low';
+  const ok=w=>(!dark||w.lit)&&(!wet||w.lit)&&(!low||(w.t!=='hilly'&&w.min<=35&&!w.drive));
+  let pool=walks().filter(w=>ok(w)&&(!walkArea||w.a===walkArea));
+  if(!pool.length)pool=walks().filter(ok);
+  if(!pool.length)pool=walks().filter(w=>w.lit&&w.t==='flat');
+  if(!pool.length)pool=walks();
+  const seed=walkSeed===null?new Date().getDate():walkSeed;
+  return pool[Math.abs(seed)%pool.length];
+}
+const TERRAIN={flat:'flat the whole way',gentle:'a gentle rise',hilly:'one real hill'};
+
 function walkCardHtml(){
-  const w=walkPick(), done=getDay().movement;
+  const w=walkPick(), done=getDay().movement, r=pickWalk();
   return `<div class="walkcard">
     <div class="wk-h">🚶 Take a walk</div>
     <div class="wk-s">Shoes. That's the whole setup.</div>
+    <div class="wk-areas">${Object.keys(AREAS).map(k=>
+      `<button class="lchip${walkArea===k?' on':''}" onclick="setWalkArea('${k}')">${AREAS[k].e} ${AREAS[k].l}</button>`).join('')}</div>
+    <div class="wk-r"><b>${escq(r.n)}</b>
+      <span>${r.min} min · ${TERRAIN[r.t]||r.t}${r.drive?' · drive there':''}${!r.lit&&todPhase()!=='day'?' · unlit':''}</span>
+      <em>${escq(r.see)}</em>
+      <div class="wk-sit">🪑 Sit a while at <b>${escq(r.sit)}</b>, then walk back.</div></div>
     <div class="wk-line"><span class="wk-e">${w.s.e}</span><a class="wk-song" href="${w.s.u}" target="_blank" rel="noopener">${escq(w.s.t)} ↗</a></div>
     <div class="wk-n"><b>While you're out:</b> ${escq(w.n)}</div>
     <div class="wk-btns">
