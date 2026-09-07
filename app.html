@@ -209,6 +209,15 @@
   .ritc .rn{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-top:3px;color:var(--espresso)}
   .ritc .rm{font-size:11px;color:var(--brown-mid);margin-top:2px}
 
+  /* on this day — her own past, resurfaced */
+  .otd{background:var(--white);border:1px solid var(--line);border-left:3px solid var(--gold);
+    border-radius:var(--r);padding:14px 16px;margin:10px 0 2px;box-shadow:var(--shadow-sm)}
+  .otd-lab{font-family:'Nunito';font-size:9.5px;font-weight:800;letter-spacing:2.2px;
+    text-transform:uppercase;color:var(--ochre-dk)}
+  .otd-q{font-family:'Lora',serif;font-style:italic;font-size:15.5px;line-height:1.55;
+    color:var(--espresso);margin:8px 0 7px}
+  .otd-src{font-size:11.5px;color:var(--brown-mid);line-height:1.45}
+
   /* toast — the app's confirmation channel, replacing the mascot speech bubble */
   #toast{
     position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));
@@ -459,6 +468,7 @@
     <section class="panel active" id="panel-now">
       <div class="sky" id="sky" onclick="openGarden()"></div>
       <div class="rits" id="rits"></div>
+      <div id="onThisDay"></div>
       <div class="bloom" id="bloom"></div>
       <div id="nowBody"></div>
       <button class="couch-btn" onclick="openCouch()">🛋️ I'm stuck on the couch<span class="cse">one tiny thing, zero deciding</span></button>
@@ -740,16 +750,48 @@ function pickNow(mode){
   if(mode==='low'||mode==='balanced'){const m=MICRO[new Date().getMinutes()%MICRO.length];return{key:'micro',kind:'micro',title:m.title,sub:'a gentle win',step:m.step,effort:'low'};}
   return null;
 }
+/* ============ TONIGHT MODE ============
+   After 9pm the app stops asking for things. No overdue people, no chores, no
+   "3 more fit today". Nothing is reset or lost — it is simply not brought up
+   until morning. Before 7am it does the same in the other direction. */
+function quietHours(){const h=new Date().getHours();return h>=21||h<7;}
+
 function buildNow(){
   const body=document.getElementById('nowBody');
   const mode=todayMode();
+
+  if(quietHours()){
+    const h=new Date().getHours(), late=h>=21||h<4;
+    const waiting=candidates().length;
+    body.innerHTML=`<div class="modeline"><span>🌙 ${late?'Tonight':'Early'}</span></div>
+      <div class="voice">${late
+        ? 'Nothing is being asked of you now. Whatever is waiting will still be there tomorrow, and it will keep.'
+        : 'It is early. The day has not started asking yet.'}</div>
+      <div class="nowcard mode-low">
+        <div class="now-kick">Right now</div>
+        <div class="now-title">${late?'Wind down.':'Take it slow.'}</div>
+        <div class="now-sub">${late
+          ? 'Close the day, or take a short walk, or neither. All three are fine.'
+          : 'Meds and water, and that is genuinely plenty before seven.'}</div>
+        <div class="now-btns">
+          <button class="btn btn-primary" onclick="openRitual('${late?'evening':'morning'}')">${late?'Close the day':'Start the morning'}</button>
+          <button class="btn btn-soft" onclick="openReset()">🌬️ Reset</button>
+        </div>
+        <div class="reassure">Rest is doing something.</div>
+      </div>
+      ${waiting?`<div class="hiddenline">${waiting} thing${waiting>1?'s':''} waiting — hidden until morning, not forgotten</div>`:''}`;
+    refreshDay();buildMusts();buildStreak();buildHoardStrip();buildOnThisDay();
+    const en=document.getElementById('eveningNudge');if(en)en.innerHTML='';
+    return;
+  }
+
   if(!mode){
     body.innerHTML=`<div class="ask">How much gas do you have today?</div>
       <div class="energy">
         ${Object.keys(MODES).map(k=>`<button class="echip" onclick="setMode('${k}')"><span class="ee">${MODES[k].emoji}</span><span><span class="et">${MODES[k].label}</span><span class="es">${escq(MODES[k].hint)}</span></span></button>`).join('')}
       </div>
       <div class="voice" style="margin-top:14px">Pick honestly, not hopefully. I'll match the day to it — change it anytime.</div>`;
-    refreshDay();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();return;
+    refreshDay();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();buildOnThisDay();return;
   }
   const M=MODES[mode];
   const all=candidates().filter(x=>!SNOOZED.has(x.key));
@@ -780,7 +822,7 @@ function buildNow(){
   body.innerHTML=`<div class="modeline"><span>${M.emoji} ${M.label}</span><span class="swap" onclick="clearMode()">change</span></div>
     <div class="voice">${escq(M.line)}</div>${guard}
     <div class="nowcard ${M.cls}">${inner}</div>${hline}`;
-  refreshDay();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();
+  refreshDay();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();buildOnThisDay();
 }
 /* hoard strip — mirrors financial.html's ledger. Reads only; the vault owns the writes. */
 const HOARD_TIERS=[[1000,'🪙'],[5000,'🥚'],[10000,'🔑'],[25000,'🐉'],[50000,'🎩'],[100000,'🏛️']];
@@ -906,6 +948,39 @@ function buildSkyRow(){
     +chip(t==='day','Day',"setSky('t','day')")+chip(t==='dusk','Dusk',"setSky('t','dusk')")
     +chip(t==='night','Night',"setSky('t','night')")
     +`</div>`;
+}
+
+/* ============ ON THIS DAY ============
+   The cheapest possible source of genuinely new content: her own past. She wrote
+   these and forgot them, which is what makes them new. Zero authoring, and it
+   gets richer every month the app runs. */
+const LOOKBACKS=[[30,'a month ago'],[90,'three months ago'],[182,'six months ago'],[365,'a year ago'],[730,'two years ago']];
+function onThisDay(){
+  const dumps=DB.get('lm_dump',[])||[];
+  const grats=DB.get('lm_gratitude',[])||[];
+  const jour=DB.get('lm_journal',{})||{};
+  for(const [back,label] of LOOKBACKS){
+    const iso=offset(-back);
+    const j=jour[iso];
+    if(j&&j.journal&&j.journal.trim())return{label,iso,kind:'wrote',text:j.journal.trim()};
+    const g=grats.find(x=>x&&x.date===iso&&x.words&&x.words.length);
+    if(g)return{label,iso,kind:'grateful',text:g.words.join(' · ')};
+    /* isoDate(), not toISOString() — the app stores local dates, and UTC would be
+       a day ahead all evening in Seattle, so dumps would never match. */
+    const d=dumps.find(x=>x&&x.ts&&x.text&&isoDate(new Date(x.ts))===iso);
+    if(d)return{label,iso,kind:'caught',text:d.text};
+  }
+  return null;
+}
+function buildOnThisDay(){
+  const el=document.getElementById('onThisDay');if(!el)return;
+  const o=onThisDay();
+  if(!o){el.innerHTML='';return;}
+  const verb={wrote:'You wrote this',grateful:'You were grateful for',caught:'You caught this thought'}[o.kind];
+  const when=new Date(o.iso+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric'});
+  el.innerHTML=`<div class="otd"><div class="otd-lab">From you, ${o.label}</div>`
+    +`<div class="otd-q">“${escq(o.text)}”</div>`
+    +`<div class="otd-src">${verb} on ${when}. You had forgotten.</div></div>`;
 }
 
 /* ============ RITUAL ENGINE ============
