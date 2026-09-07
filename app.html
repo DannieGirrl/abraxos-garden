@@ -130,6 +130,22 @@
   .streak-mini b{color:var(--ochre-dk)}
 
   /* QUICK ROW */
+  /* toast — the app's confirmation channel, replacing the mascot speech bubble */
+  #toast{
+    position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(140px);
+    display:flex;align-items:center;gap:10px;
+    max-width:min(340px,88vw);
+    background:linear-gradient(160deg,#4A3730,#2E211C);
+    color:#FBEEF0;border:1px solid rgba(255,255,255,.16);
+    border-radius:14px;padding:12px 17px;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
+    z-index:400;pointer-events:none;
+    transition:transform .42s cubic-bezier(.2,1.3,.4,1);
+  }
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast .ti{font-size:21px;line-height:1;flex-shrink:0}
+  #toast .tb{font-size:13.5px;font-weight:600;line-height:1.45}
   /* compact hoard strip — one slim line, taps through to the vault */
   .hoardstrip{display:flex;align-items:center;gap:11px;background:linear-gradient(160deg,#3A2817,#5A3E22);border:1.5px solid #C79E32;border-radius:14px;padding:10px 14px;margin:10px 0 0;text-decoration:none;box-shadow:0 3px 10px rgba(90,62,34,.22)}
   .hoardstrip .hs-c{font-size:19px;flex-shrink:0}
@@ -475,6 +491,7 @@
 </div>
 
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
+<div id="toast"></div>
 
 <script>
 /* ============ DATA LAYER ============ */
@@ -633,7 +650,7 @@ function buildNow(){
         ${Object.keys(MODES).map(k=>`<button class="echip" onclick="setMode('${k}')"><span class="ee">${MODES[k].emoji}</span><span><span class="et">${MODES[k].label}</span><span class="es">${escq(MODES[k].hint)}</span></span></button>`).join('')}
       </div>
       <div class="voice" style="margin-top:14px">Pick honestly, not hopefully. I'll match the day to it — change it anytime.</div>`;
-    updateMascot();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();return;
+    refreshDay();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();return;
   }
   const M=MODES[mode];
   const all=candidates().filter(x=>!SNOOZED.has(x.key));
@@ -664,7 +681,7 @@ function buildNow(){
   body.innerHTML=`<div class="modeline"><span>${M.emoji} ${M.label}</span><span class="swap" onclick="clearMode()">change</span></div>
     <div class="voice">${escq(M.line)}</div>${guard}
     <div class="nowcard ${M.cls}">${inner}</div>${hline}`;
-  updateMascot();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();
+  refreshDay();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();
 }
 /* hoard strip — mirrors financial.html's ledger. Reads only; the vault owns the writes. */
 const HOARD_TIERS=[[1000,'🪙'],[5000,'🥚'],[10000,'🔑'],[25000,'🐉'],[50000,'🎩'],[100000,'🏛️']];
@@ -733,9 +750,28 @@ function updateMascot(){const st=mascotState();const m=document.getElementById('
   m.className='mascot '+st+(st==='sleepy'?'':' breathe')+(st==='thriving'?' float':'')+(st==='celebrating'?' shimmy float':'');
   const img=document.getElementById('mascotImg');if(img){const src='assets/princess_'+st+'.png';if(!(img.getAttribute('src')===src))img.setAttribute('src',src);}
   document.getElementById('mascotBadge').textContent=MASCOT[st].badge;
-  const sp=document.getElementById('speech');if(sp&&!sp.dataset.locked){sp.textContent=MASCOT[st].speech[new Date().getDate()%MASCOT[st].speech.length];}
-  buildBloom();}
-function say(t){const sp=document.getElementById('speech');if(!sp)return;sp.textContent=t;sp.dataset.locked='1';setTimeout(()=>{sp.dataset.locked='';updateMascot();},3200);}
+  const sp=document.getElementById('speech');if(sp){sp.textContent=MASCOT[st].speech[new Date().getDate()%MASCOT[st].speech.length];}
+}
+/* Single seam for "the day changed, re-render it." Bloom used to be rendered from
+   inside updateMascot(), which meant deleting the mascot would silently kill the
+   bloom bar. When the mascot goes, only this function changes. */
+function refreshDay(){buildBloom();updateMascot();}
+
+/* ============ FEEDBACK ============
+   say() used to write into the mascot's speech bubble, which made the bubble the
+   app's only confirmation channel. It now raises a real toast instead, so every
+   existing call site keeps working and none of them care that the mascot is going
+   away. Leading emoji in the message is pulled out and shown as the toast's icon. */
+function say(t){
+  const el=document.getElementById('toast');if(!el)return;
+  const s=String(t).trim();
+  const m=s.match(/^(\p{Extended_Pictographic}️?)\s*(.*)$/u) || s.match(/^(.*?)\s*(\p{Extended_Pictographic}️?)$/u);
+  let icon='', body=s;
+  if(m){ if(/^\p{Extended_Pictographic}/u.test(m[1])){icon=m[1];body=m[2];} else {icon=m[2];body=m[1];} }
+  el.innerHTML=(icon?`<span class="ti">${icon}</span>`:'')+`<span class="tb">${escq(body)}</span>`;
+  el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),3400);
+}
 
 /* daily bloom bar — fills with today's wins, resets each day, never shames */
 function bloomToday(){const d=getDay();let v=0;if(d.meds)v+=30;if(d.movement)v+=25;if(d.vibration)v+=20;if((d.water||0)>=1)v+=10;if(d.energy&&d.head&&d.gut)v+=15;return Math.min(100,v);}
@@ -773,7 +809,7 @@ function autoCreditGraduated(){
 function ungraduate(k){
   const o=gradOff();o[k]=todayISO();DB.set('lm_grad_off',o);
   const day=getDay();day[k]=false;saveDay(day);
-  buildMusts();updateMascot();buildStreak();
+  buildMusts();refreshDay();buildStreak();
   say('Okay — back on the list for today. No harm done.');
 }
 
@@ -795,9 +831,9 @@ function buildMusts(){
   if(jm)jm.style.display=isGraduated('meds')?'none':'';   // pointless once meds runs itself
   buildQlog();}
 function tapSeed(k){const day=getDay();day[k]=!day[k];if(day[k]){creditShowedUp(day);}saveDay(day);checkDiamond();if(day[k]){awardReward();addXP('body',1);}
-  const st=mascotState();if(day[k]&&(k==='meds'||st!=='sleepy'))say(MASCOT[st].speech[0]);buildMusts();updateMascot();buildStreak();buildNow&&buildNowLight();}
+  const st=mascotState();if(day[k]&&(k==='meds'||st!=='sleepy'))say(MASCOT[st].speech[0]);buildMusts();refreshDay();buildStreak();buildNow&&buildNowLight();}
 function buildNowLight(){/* refresh musts-dependent chrome without rebuilding energy UI */}
-function justMeds(){const day=getDay();if(!day.meds){day.meds=true;creditShowedUp(day);saveDay(day);checkDiamond();buildMusts();updateMascot();buildStreak();say('Just meds today is a full win. 💊');}}
+function justMeds(){const day=getDay();if(!day.meds){day.meds=true;creditShowedUp(day);saveDay(day);checkDiamond();buildMusts();refreshDay();buildStreak();say('Just meds today is a full win. 💊');}}
 function creditShowedUp(day){if(!day.showed_up){day.showed_up=true;day.timestamp=new Date().toISOString();const f=getFlowers();if(!f.includes(todayISO())){f.push(todayISO());saveFlowers(f);}}}
 function checkDiamond(){const dm=getDiamonds();const wk=weekKey();if(dm.includes(wk))return;
   let full=0;for(let i=0;i<7;i++){const raw=localStorage.getItem('day_'+offset(-i));if(raw){const d=JSON.parse(raw);if(d.meds&&d.vibration&&d.movement)full++;}}
@@ -945,7 +981,7 @@ function getChoreSub(wk,key){if(!wk.chore_sub)wk.chore_sub={};if(!wk.chore_sub[k
 function choreState(wk,key){const subDef=CHORE_DEFS[key].subs;const sub=wk.chore_sub&&wk.chore_sub[key]?wk.chore_sub[key]:{subtasks:[],notes:''};
   const allChecked=subDef.every(s=>sub.subtasks.includes(s.id));if(wk[key]||allChecked)return'done';
   if(sub.subtasks.length>0||(sub.notes&&sub.notes.trim()))return'partial';return'none';}
-function creditChoreShowedUp(){const day=getDay();creditShowedUp(day);saveDay(day);buildStreak();updateMascot();}
+function creditChoreShowedUp(){const day=getDay();creditShowedUp(day);saveDay(day);buildStreak();refreshDay();}
 function toggleChore(key){const wk=getWeek();wk[key]=!wk[key];saveWeek(wk);if(wk[key]){creditChoreShowedUp();awardReward();addXP('home',2);}renderChores();}
 function toggleChoreExpand(key){expandedChore=(expandedChore===key)?null:key;renderChores();}
 function toggleSub(key,subId){const wk=getWeek();const sub=getChoreSub(wk,key);const i=sub.subtasks.indexOf(subId);
@@ -1206,7 +1242,7 @@ function buildCare(){
   document.getElementById('soundList').innerHTML=SOUNDS.map(s=>`<a class="vcard" href="${s.u}" target="_blank" rel="noopener"><div class="vi">${s.e}</div><div style="flex:1"><div class="vt">${s.t}</div><div class="vd">${s.d}</div></div><div class="vdur">↗</div></a>`).join('');
   buildTrips();buildPB();buildCareRhythms();buildEvening();
 }
-function markMovement(){const day=getDay();if(!day.movement){day.movement=true;creditShowedUp(day);saveDay(day);checkDiamond();addXP('body',1);buildMusts&&buildMusts();updateMascot&&updateMascot();buildStreak&&buildStreak();}}
+function markMovement(){const day=getDay();if(!day.movement){day.movement=true;creditShowedUp(day);saveDay(day);checkDiamond();addXP('body',1);buildMusts&&buildMusts();refreshDay();buildStreak&&buildStreak();}}
 function openMoveForm(){showModal(`<h3>Add a video</h3><div class="mdesc">Paste a link from TikTok, YouTube, or Instagram. In the app: tap <b>Share → Copy Link</b>, then paste it here.</div>
   <div class="field"><label>What is it?</label><input id="mv_t" placeholder="e.g. 5-min stretch I like"></div>
   <div class="field"><label>Link</label><input id="mv_u" placeholder="https://..."></div>
@@ -1346,7 +1382,7 @@ function rollCouch(first){let i=Math.floor(Math.random()*COUCH.length);
     <div class="nowcard e-low" style="text-align:left"><div class="now-title" style="font-size:20px">${escq(c.t)}</div><div class="now-step" style="margin-top:11px">🫱 ${escq(c.s)}</div></div>
     <div class="btn-row" style="margin-top:14px"><button class="btn btn-primary" style="flex:1" onclick="couchDone()">Did it ✓</button><button class="btn btn-soft" onclick="rollCouch(false)">🎲 Reroll</button></div>
     <div class="reassure" style="margin-top:10px">Or close this and rest — that's allowed too.</div>`);}
-function couchDone(){const day=getDay();creditShowedUp(day);saveDay(day);checkDiamond();awardReward();addXP('body',1);buildStreak();buildMusts&&buildMusts();updateMascot();closeModal();say("You got off the couch. That's the whole win. 💛");}
+function couchDone(){const day=getDay();creditShowedUp(day);saveDay(day);checkDiamond();awardReward();addXP('body',1);buildStreak();buildMusts&&buildMusts();refreshDay();closeModal();say("You got off the couch. That's the whole win. 💛");}
 
 /* ============ COMMUTE COOL-DOWN SUITE ============ */
 function airlock(){showModal(`<h3>Airlock 🔒</h3><div class="mdesc">Before you shift into drive. One beat in the parking lot.</div>
@@ -1397,7 +1433,7 @@ function qlog(k){const day=getDay();
   else if(k==='stretched'){day.movement=!day.movement;if(day.movement){creditShowedUp(day);addXP('body',1);}toast(day.movement?'🧘 counts as movement':'Cleared');}
   else if(k==='redlight'){day.vibration=!day.vibration;if(day.vibration){creditShowedUp(day);addXP('body',1);}toast(day.vibration?'🌟 logged':'Cleared');}
   if(k==='water'&&day.water===1)addXP('body',1);
-  saveDay(day);checkDiamond();buildMusts();updateMascot();buildStreak();}
+  saveDay(day);checkDiamond();buildMusts();refreshDay();buildStreak();}
 
 /* ============ MICRO-AI BYTE FEED (Work) ============ */
 const BYTES=[

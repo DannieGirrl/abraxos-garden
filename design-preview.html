@@ -235,8 +235,37 @@ h1.display{
   background:var(--surface);border:1px solid var(--line);
   border-radius:14px;padding:12px 6px 11px;backdrop-filter:blur(10px);
 }
+.cd{cursor:pointer}
+.cd:active{transform:scale(.97)}
+.cd .cdart{width:42px;height:42px;margin-bottom:1px}
+.cd .cdart svg{width:100%;height:100%;display:block}
 .cd .cdi{font-size:22px;line-height:1.1}
 .cd .fi{margin-bottom:2px}
+
+/* ============ TRIP SHEET ============ */
+#sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  max-width:430px;margin:0 auto;
+  background:linear-gradient(175deg,var(--ground-a),var(--ground-b));
+  color:var(--ink);
+  border-top-left-radius:22px;border-top-right-radius:22px;
+  box-shadow:0 -12px 44px rgba(0,0,0,.42);
+  transform:translateY(102%);transition:transform .46s cubic-bezier(.2,1.05,.3,1);
+  max-height:92vh;overflow-y:auto;
+}
+#sheet.on{transform:translateY(0)}
+.triphero{
+  height:186px;background-size:cover;background-position:center 62%;
+  border-top-left-radius:22px;border-top-right-radius:22px;
+}
+.tripsvg{height:150px;display:flex;align-items:center;justify-content:center;padding-top:16px}
+.tripsvg svg{height:130px;width:130px}
+.sheetbody{padding:18px 20px calc(22px + env(safe-area-inset-bottom))}
+.sheeth{font-family:'Fraunces',serif;font-size:25px;font-weight:600;line-height:1.2;margin:7px 0 4px}
+.sheetlab{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+.sheetp{font-size:13.5px;line-height:1.6;color:var(--muted)}
+.sheetp.prep{padding-left:15px;position:relative;margin-top:5px}
+.sheetp.prep::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .cd .cdn{font-family:'Fraunces',serif;font-size:27px;font-weight:600;line-height:1;margin-top:4px}
 .cd .cdl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);line-height:1.45;margin-top:3px}
 
@@ -497,23 +526,7 @@ h1.display{
 
     <!-- ============ BODY ============ -->
     <section class="panel" id="p-body" style="padding-top:2px">
-      <div class="countdown">
-        <div class="cd">
-          <div class="fi fi-trip sm"></div>
-          <div class="cdn">100</div>
-          <div class="cdl">days<br>BVI</div>
-        </div>
-        <div class="cd">
-          <div class="cdi">🏝️</div>
-          <div class="cdn">195</div>
-          <div class="cdl">days<br>Hawaii</div>
-        </div>
-        <div class="cd">
-          <div class="cdi">🔑</div>
-          <div class="cdn">176</div>
-          <div class="cdl">days<br>one home</div>
-        </div>
-      </div>
+      <div class="countdown" id="countdown"></div>
       <h1 class="display">Nothing here<br>asks you to bounce.</h1>
       <div class="sub">Pick a type and I'll choose one. Or just take the walk.</div>
 
@@ -628,6 +641,7 @@ h1.display{
   </div>
 </div>
 
+<div id="sheet"></div>
 <div class="tabbar" id="tabbar"></div>
 
 <div class="player" id="player">
@@ -901,6 +915,59 @@ function buildDots(){
   }
   document.getElementById('dots').innerHTML=h;
 }
+/* ============================================================
+   COUNTDOWNS — soonest first. Tap opens a card: a line in her
+   voice, what she's banked since it started, and (inside 90 days)
+   the practical prep. Never a word about how she looks.
+   ============================================================ */
+const TRIPS=[
+  {k:'bvi',   n:'BVI',      days:95,  when:'December 10–18',
+   art:null, lines:[
+     'Nine days of saltwater and no laptop.',
+     'You want to be the one who jumps off the boat first.',
+     'The catamaran does not care about your inbox.'],
+   banked:'31 walks · 2 push-up records · 14 somatic sessions',
+   prep:['Check the passport — BVI is a foreign entry','Refill scripts through the 18th','Ask about a boat day']},
+  {k:'move',  n:'one home', days:176, when:'Late February / early March',
+   art:'assets/move-in.png', lines:[
+     'One set of keys. One place your things live.',
+     'No more four bags to get through a Tuesday.',
+     'The lavender was already there.'],
+   banked:'Since this countdown started: $1,160 moved',
+   prep:['Start the give-away pile now, not in February','Measure the garage for the plate','Address change list']},
+  {k:'hawaii',n:'Hawaii',   days:195, when:'Mid to late March',
+   art:null, lines:[
+     'Long slow mornings with nowhere to be.',
+     'The walks now are so the hikes later are easy.',
+     'You will want energy, not just a swimsuit.'],
+   banked:'31 walks · plank up from 40s to 52s',
+   prep:[]}
+];
+function buildCountdown(){
+  const el=document.getElementById('countdown');if(!el)return;
+  el.innerHTML=TRIPS.slice().sort((a,b)=>a.days-b.days).map(t=>
+    `<div class="cd" onclick="openTrip('${t.k}')">`
+    +`<div class="cdart">${TRIP[t.k]()}</div>`
+    +`<div class="cdn">${t.days}</div><div class="cdl">days<br>${t.n}</div></div>`).join('');
+}
+function openTrip(k){
+  const t=TRIPS.find(x=>x.k===k);
+  const line=t.lines[Math.floor(Math.random()*t.lines.length)];
+  showSheet(
+    (t.art?`<div class="triphero" style="background-image:url('${t.art}')"></div>`:`<div class="tripsvg">${TRIP[t.k]()}</div>`)
+    +`<div class="sheetbody">`
+    +`<div class="eyebrow">${t.when} · ${t.days} days</div>`
+    +`<h2 class="sheeth">${line}</h2>`
+    +`<div class="sheetlab">What you have banked</div>`
+    +`<p class="sheetp">${t.banked}</p>`
+    +(t.prep.length?`<div class="sheetlab">Worth doing now</div>`
+      +t.prep.map(p=>`<p class="sheetp prep">${p}</p>`).join(''):'')
+    +`<button class="btn" style="margin-top:16px" onclick="closeSheet()">Close</button>`
+    +`</div>`);
+}
+function showSheet(h){const s=document.getElementById('sheet');s.innerHTML=h;s.classList.add('on');}
+function closeSheet(){document.getElementById('sheet').classList.remove('on');}
+
 function buildPeople(){
   const p=[['Dina','date night',2,'people'],['Uncle Jack','call',11,'people'],
            ['Mom','check in',5,'people'],['Amanda','overdue',19,'people']];
@@ -926,6 +993,63 @@ function go(k){
 /* ============================================================
    RITUAL PLAYER — it waits, everything is skippable, it ends
    ============================================================ */
+/* ============================================================
+   TRIP ICONS — cartoon SVG, legible at 38px where a detailed
+   scene would turn to mush. The painted scenes are the reveal
+   inside the card; these are the chips.
+   ============================================================ */
+const TRIP={
+  /* BVI is the group trip: catamaran, drinks, swimming */
+  bvi:()=>`<svg viewBox="0 0 100 100" stroke-linejoin="round" stroke-linecap="round">
+    <circle cx="76" cy="24" r="11" fill="#FFC93C" stroke="${OL}" stroke-width="2.6"/>
+    <path d="M48 20l22 34H40z" fill="#FF7E92" stroke="${OL}" stroke-width="2.8"/>
+    <path d="M50 26l14 24H50z" fill="#fff" opacity=".35"/>
+    <path d="M46 18v38" stroke="${OL}" stroke-width="3"/>
+    <path d="M14 58h72l-9 13a6 6 0 0 1-5 3H28a6 6 0 0 1-5-3z" fill="#F2F6FA" stroke="${OL}" stroke-width="2.8"/>
+    <path d="M22 62h56l-4 6H26z" fill="#7FB2F0" opacity=".5"/>
+    <g stroke="#2E86B0" stroke-width="3.4" fill="none" opacity=".9">
+      <path d="M8 82c6-4 12-4 18 0s12 4 18 0 12-4 18 0 12 4 18 0"/>
+      <path d="M8 92c6-4 12-4 18 0s12 4 18 0 12-4 18 0 12 4 18 0" opacity=".6"/></g>
+    <g fill="#FFE07A" stroke="${OL}" stroke-width="1.6">
+      <path d="M18 22l2-5.4 2 5.4 5.4 2-5.4 2-2 5.4-2-5.4-5.4-2z"/></g>
+  </svg>`,
+  /* the lavender U-Haul */
+  move:()=>`<svg viewBox="0 0 100 100" stroke-linejoin="round" stroke-linecap="round">
+    <ellipse cx="50" cy="84" rx="40" ry="5" fill="${OL}" opacity=".22"/>
+    <rect x="6" y="30" width="54" height="38" rx="4" fill="#C9A8E8" stroke="${OL}" stroke-width="3"/>
+    <path d="M6 42h54" stroke="${OL}" stroke-width="2.4" opacity=".55"/>
+    <rect x="10" y="33" width="20" height="6" rx="3" fill="#fff" opacity=".45"/>
+    <path d="M60 44h16l12 12v12H60z" fill="#B98AD9" stroke="${OL}" stroke-width="3"/>
+    <path d="M63 47h11l8 8H63z" fill="#DFF0FA" stroke="${OL}" stroke-width="2.4"/>
+    <circle cx="24" cy="70" r="8.5" fill="#3A3048" stroke="${OL}" stroke-width="2.6"/>
+    <circle cx="24" cy="70" r="3.2" fill="#C9A8E8"/>
+    <circle cx="74" cy="70" r="8.5" fill="#3A3048" stroke="${OL}" stroke-width="2.6"/>
+    <circle cx="74" cy="70" r="3.2" fill="#C9A8E8"/>
+    <g fill="#FF6E8A" stroke="${OL}" stroke-width="2">
+      <path d="M22 54c-2.4-3-7-2.6-7 1.4 0 2.8 4 6 7 8 3-2 7-5.2 7-8 0-4-4.6-4.4-7-1.4z"/>
+      <path d="M42 52c-1.8-2.2-5.2-2-5.2 1 0 2 3 4.4 5.2 6 2.2-1.6 5.2-4 5.2-6 0-3-3.4-3.2-5.2-1z"/></g>
+    <g fill="#B98AD9" stroke="${OL}" stroke-width="1.8">
+      <path d="M92 78c1.4-5 1-9 1-9s-3 2.6-4 7.6"/><path d="M85 80c1.4-6 1-11 1-11s-3.4 3-4.4 9.2"/></g>
+  </svg>`,
+  /* Hawaii is the couples trip: palms and hearts */
+  hawaii:()=>`<svg viewBox="0 0 100 100" stroke-linejoin="round" stroke-linecap="round">
+    <circle cx="50" cy="46" r="20" fill="#FFAE5C" stroke="${OL}" stroke-width="2.6"/>
+    <path d="M38 34a20 20 0 0 1 14-6" stroke="#fff" stroke-width="3.4" opacity=".45" fill="none"/>
+    <path d="M26 84c1-24 3-38 4-46" stroke="${OL}" stroke-width="6" fill="none"/>
+    <path d="M27 84c1-24 3-38 4-46" stroke="#9E7048" stroke-width="3.4" fill="none"/>
+    <g fill="#43A860" stroke="${OL}" stroke-width="2.4">
+      <path d="M31 38c-9-8-19-7-23-1 7 1 15 3 22 6z"/>
+      <path d="M31 38c1-12 8-18 15-17-4 5-9 11-13 19z"/>
+      <path d="M31 38c9-7 19-6 23 0-7 0-16 2-22 5z"/>
+      <path d="M31 38c-4-11-2-19 4-22-1 6-2 14-2 24z"/></g>
+    <g fill="#FF6E8A" stroke="${OL}" stroke-width="2.2">
+      <path d="M70 60c-2.8-3.4-8-3-8 1.6 0 3.2 4.6 6.8 8 9.2 3.4-2.4 8-6 8-9.2 0-4.6-5.2-5-8-1.6z"/>
+      <path d="M83 42c-2-2.4-5.8-2.2-5.8 1.2 0 2.3 3.3 4.9 5.8 6.6 2.5-1.7 5.8-4.3 5.8-6.6 0-3.4-3.8-3.6-5.8-1.2z"/></g>
+    <g stroke="#2E86B0" stroke-width="3.4" fill="none">
+      <path d="M8 88c6-4 12-4 18 0s12 4 18 0 12-4 18 0 12 4 18 0"/></g>
+  </svg>`
+};
+
 /* ============================================================
    SVG STEP ART — hand-drawn vector in the soft/rounded register.
    Takes the step world's own colors, so it reseasons itself and
@@ -1129,7 +1253,7 @@ document.getElementById('toggleDev').onclick=function(){
 };
 
 /* boot */
-buildStars();buildRain();buildConstellation();buildDots();buildPeople();
+buildStars();buildRain();buildConstellation();buildDots();buildPeople();buildCountdown();
 syncDev();applyTheme();
 </script>
 </body>
