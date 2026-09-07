@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#F4E3E6">
+<title>Meals</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;600;700;800&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#F4E3E6;--paper:#FBEEF0;--white:#FFFCFB;--espresso:#4A3730;--brown-mid:#8A6F66;
+    --rosewood:#C98695;--rosewood-dk:#A5636F;--mauve:#9E6072;--moss:#6E7F4A;--moss-dk:#5C6C3C;
+    --ochre:#D19A32;--ochre-dk:#B5822A;--rust:#B5665A;--line:#EBD3D4;
+    --shadow-sm:0 2px 8px rgba(120,70,85,.12);--shadow-md:0 8px 24px rgba(120,70,85,.18);--r:18px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--ivory);color:var(--espresso);font-family:'Nunito',sans-serif;-webkit-font-smoothing:antialiased}
+  #app{max-width:440px;margin:0 auto;min-height:100vh;background:var(--ivory);padding-bottom:40px}
+
+  .header{padding:calc(16px + env(safe-area-inset-top)) 18px 16px;background:linear-gradient(160deg,#C98499 0%,#9E6072 100%);color:#FFF6F8;position:relative;overflow:hidden}
+  .header::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,244,246,.14) 1px,transparent 1px);background-size:18px 18px;pointer-events:none}
+  .back{display:inline-block;font-size:12px;font-weight:800;color:#F6DEE4;text-decoration:none;margin-bottom:8px;letter-spacing:.5px}
+  .title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1;position:relative;z-index:1}
+  .sub{font-size:12px;color:#F2D6DD;margin-top:6px;position:relative;z-index:1}
+
+  .tabs{display:flex;background:var(--white);box-shadow:var(--shadow-sm)}
+  .tab{flex:1;padding:14px;border:none;background:transparent;font-family:'Nunito';font-weight:800;font-size:13px;color:var(--brown-mid);cursor:pointer;border-bottom:3px solid transparent}
+  .tab.active{color:var(--mauve);border-bottom-color:var(--rosewood)}
+
+  .wrap{padding:14px 16px}
+  .flabel{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--brown-mid);margin:6px 0 8px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{padding:7px 13px;border-radius:20px;border:1.5px solid var(--line);background:var(--white);font-family:'Nunito';font-weight:700;font-size:12px;color:var(--brown-mid);cursor:pointer}
+  .chip.on{background:var(--rosewood);border-color:var(--rosewood);color:#fff}
+  .chip.flare.on{background:var(--rust);border-color:var(--rust)}
+  .catbar{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+  .catchip{white-space:nowrap;padding:7px 13px;border-radius:20px;border:1.5px solid var(--line);background:var(--white);font-weight:700;font-size:12px;color:var(--brown-mid);cursor:pointer}
+  .catchip.on{background:var(--ochre);border-color:var(--ochre);color:var(--espresso)}
+  .count{font-size:11px;color:var(--brown-mid);margin:2px 2px 10px}
+
+  .meal{background:var(--white);border-radius:14px;padding:13px 15px;margin-bottom:9px;box-shadow:var(--shadow-sm);cursor:pointer;border-left:4px solid var(--moss)}
+  .meal.yellow{border-left-color:var(--ochre)}
+  .meal-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .meal-name{font-weight:800;font-size:15px;line-height:1.25}
+  .meal-meta{font-size:10.5px;color:var(--brown-mid);margin-top:3px}
+  .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+  .badge{font-size:9.5px;font-weight:800;letter-spacing:.3px;padding:2px 8px;border-radius:10px}
+  .b-green{background:#EEF2E4;color:var(--moss-dk)} .b-yellow{background:#FBF0D9;color:var(--ochre-dk)}
+  .b-prot{background:#F3DEE4;color:var(--rosewood-dk)} .b-reflux{background:#EAF3EE;color:var(--moss-dk)}
+  .b-mig{background:#EFE7F5;color:#7A5AA0} .b-anx{background:#FBE7EB;color:var(--rosewood-dk)}
+  .caret{font-size:14px;color:var(--brown-mid);transition:transform .2s}
+  .meal.open .caret{transform:rotate(180deg)}
+  .detail{display:none;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+  .meal.open .detail{display:block}
+  .note{font-family:'Lora',serif;font-style:italic;font-size:13px;color:var(--espresso);line-height:1.55;margin-bottom:10px}
+  .ing-l{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--brown-mid);margin-bottom:6px}
+  .ings{display:flex;flex-wrap:wrap;gap:5px}
+  .ing{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:3px 10px;font-size:11px;color:var(--brown-mid)}
+  .ing.shared{background:#FBF0D9;border-color:#EAD3A0;color:var(--ochre-dk)}
+  .shared-note{margin-top:7px;font-size:11px;color:var(--ochre-dk)}
+
+  .strategy{background:linear-gradient(150deg,#FBE1E7,#FDF3F1);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .strategy .st{font-weight:800;font-size:13px;color:var(--mauve);margin-bottom:5px}
+  .strategy p{font-size:12px;color:var(--brown-mid);line-height:1.55}
+  .shopgroup{background:var(--white);border-radius:14px;padding:13px 16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+  .shopgroup h3{font-family:'Playfair Display',serif;font-size:15px;margin-bottom:8px}
+  .shopitem{display:flex;align-items:center;gap:11px;padding:7px 0;border-bottom:1px solid var(--paper);cursor:pointer}
+  .shopitem:last-child{border-bottom:none}
+  .box{width:19px;height:19px;border-radius:5px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+  .shopitem.done .box{background:var(--moss);border-color:var(--moss)}
+  .shopitem.done .itxt{text-decoration:line-through;color:var(--brown-mid)}
+  .itxt{font-size:13.5px}
+  .store{background:var(--white);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-sm);font-size:12.5px;line-height:1.9;color:var(--brown-mid)}
+  .store b{color:var(--espresso)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <a class="back" href="app.html">← Back</a>
+    <div class="title">Meal Roster 🌿</div>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-meals" onclick="setTab('meals')">🍽️ Meals</button>
+    <button class="tab" id="tab-shop" onclick="setTab('shop')">🛒 Shopping</button>
+  </div>
+  <div class="wrap" id="mealsView">
+    <div class="flabel">How much energy to cook?</div>
+    <div class="chips" id="energyChips"></div>
+    <div class="flabel">Rough day? Filter for gentle meals</div>
+    <div class="chips" id="flareChips"></div>
+    <div class="catbar" id="catbar"></div>
+    <div class="count" id="count"></div>
+    <div id="mealList"></div>
+  </div>
+  <div class="wrap" id="shopView" style="display:none"></div>
+</div>
+
+<script>
+const allMeals=[
+  {id:1,name:"French Onion Tortellini Bake",cat:"big-two",effort:"green",time:"40 min (5 hands-on)",ingredients:["frozen tortellini","french onion soup (can)","beef consommé","butter","gruyère"],shared:["butter","frozen tortellini"],note:"Dump in casserole dish, foil on, 375° for 20 min, uncover, stir, 20 more min, cheese on top. Save for calm GERD days.",migraine:false,anxiety:false},
+  {id:2,name:"Salsa Crockpot Chicken",cat:"big-two",effort:"green",time:"5 min prep / 6 hrs",ingredients:["chicken breast","jar of salsa","garlic powder"],shared:["chicken breast","garlic powder"],note:"Shred and use all week — tacos, bowls, quesadillas, pitas, tzatziki. The most versatile anchor in this roster.",migraine:false,anxiety:true},
+  {id:3,name:"Cheeseburger Mac Skillet",cat:"big-two",effort:"green",time:"25 min",ingredients:["ground beef","elbow macaroni","beef broth","tomato sauce","Colby Jack","garlic powder","mustard","ketchup"],shared:["ground beef","beef broth","garlic powder"],note:"Brown beef, add broth + tomato sauce + pasta, cook until tender, stir in cheese. 4 servings. Comfort food that's also real dinner.",migraine:false,anxiety:true},
+  {id:4,name:"Garlic Parm Spaghettios",cat:"big-two",effort:"green",time:"10 min",ingredients:["ring pasta","butter","olive oil","garlic powder","heavy cream","beef broth","parmesan"],shared:["butter","parmesan","garlic powder","beef broth"],note:"Cook pasta IN the sauce — butter + oil + cream + broth in one pot. 10 minutes flat. Pure comfort.",migraine:true,anxiety:true},
+  {id:5,name:"Tuna Pasta Salad",cat:"big-two",effort:"green",time:"15 min",ingredients:["shell pasta","canned tuna","frozen peas","Greek yogurt","celery","dill"],shared:["canned tuna","Greek yogurt","pasta","frozen peas"],note:"Cook pasta, cool it, mix everything. Fridge-stable 4 days. Eat cold from the container.",migraine:true,anxiety:true},
+  {id:6,name:"Sweet Potato Beef Bowls",cat:"big-two",effort:"green",time:"30 min",ingredients:["ground beef","sweet potatoes","hot honey","cottage cheese","avocado"],shared:["ground beef","sweet potatoes"],note:"Roast sweet potato cubes at 400°. Brown ground beef. Bowl with cottage cheese + avocado. Skip hot honey on GERD days.",migraine:false,anxiety:false},
+  {id:7,name:"Marry Me Chicken Tortellini",cat:"big-two",effort:"yellow",time:"30 min",ingredients:["chicken breast","frozen tortellini","heavy cream","chicken broth","parmesan","sun-dried tomatoes","garlic powder","butter"],shared:["chicken breast","frozen tortellini","parmesan","butter","garlic powder"],note:"Sear chicken, make cream sauce in same pan, add tortellini. Rich — green light days only.",migraine:false,anxiety:false},
+  {id:8,name:"Spring Chicken Orzo",cat:"big-two",effort:"yellow",time:"30 min",ingredients:["chicken breast","orzo","frozen peas","chicken broth","butter","lemon","dill"],shared:["chicken breast","chicken broth","butter","frozen peas","lemon"],note:"Sear chicken, cook orzo in broth in same pan, stir in peas + lemon + dill. Fancy-feeling, genuinely easy.",migraine:false,anxiety:false},
+  {id:9,name:"Dumpling Bake",cat:"big-two",effort:"green",time:"30 min (5 prep)",ingredients:["frozen dumplings","rice","chicken broth","butter","soy ginger sauce","green onions","broccolini","sesame seeds"],shared:["chicken broth","butter","rice"],note:"Rice + broth + butter in baking dish, nestle dumplings on top, 400° until golden. Top with soy ginger sauce.",migraine:false,anxiety:true},
+  {id:10,name:"Lemony Peas & Ditalini",cat:"big-two",effort:"green",time:"20 min",ingredients:["ditalini pasta","frozen peas","butter","garlic","chicken broth","lemon","parmesan"],shared:["pasta","frozen peas","butter","parmesan","lemon","chicken broth"],note:"Cook pasta IN broth with butter + garlic. Stir in peas + lemon + parm. Italian comfort food. Perfect for yellow light evenings.",migraine:true,anxiety:true},
+  {id:11,name:"Cobb Salad Jars",cat:"grab-go",effort:"green",time:"20 min → 3-4 jars",ingredients:["rotisserie chicken","turkey bacon","hard boiled eggs","canned corn","cherry tomatoes","romaine","feta","Greek yogurt","ranch seasoning"],shared:["rotisserie chicken","hard boiled eggs","Greek yogurt","feta"],note:"Make 3-4 jars Sunday. Shake and eat all week. Dressing = Greek yogurt + ranch seasoning. Best meal prep in this roster.",migraine:false,anxiety:true},
+  {id:12,name:"Fancy Snack Box",cat:"grab-go",effort:"green",time:"5 min",ingredients:["TJ's cheddar","salami","mini peppers + cream cheese + everything bagel seasoning","pretzel crisps","PB + dark choc chips","grapes","strawberries"],shared:["grapes","cream cheese"],note:"Fill pepper boats with cream cheese + everything seasoning. PB + dark choc chips = built-in dessert. This IS a full meal.",migraine:true,anxiety:true},
+  {id:13,name:"Hummus Box",cat:"grab-go",effort:"green",time:"5 min",ingredients:["hummus","cucumber","hard boiled eggs","everything bagel seasoning","crackers","grapes"],shared:["hard boiled eggs","cucumber","grapes","hummus"],note:"Slice eggs, sprinkle with everything seasoning. Pack with hummus + veg + crackers + fruit. Perfect desk lunch.",migraine:true,anxiety:true},
+  {id:14,name:"Chopped Chicken Salad Pitas",cat:"grab-go",effort:"green",time:"10 min",ingredients:["rotisserie chicken","pita bread","celery","grapes","dried cranberries","Greek yogurt","dijon"],shared:["rotisserie chicken","Greek yogurt","grapes"],note:"Chop rotisserie chicken with celery + grapes + cranberries + yogurt dressing. Stuff in pitas. Make filling Sunday, grab all week.",migraine:false,anxiety:true},
+  {id:15,name:"Turkey Girl Lunch Plate",cat:"grab-go",effort:"green",time:"5 min",ingredients:["turkey deli slices","large tomato","cucumber","banana peppers"],shared:["turkey","cucumber"],note:"Turkey on thick tomato rounds + cucumber + banana peppers. Zero prep. Gentle on the stomach.",migraine:true,anxiety:true},
+  {id:16,name:"Turkey Cream Cheese Wrap Box",cat:"grab-go",effort:"green",time:"5 min",ingredients:["spinach tortillas","turkey","cream cheese","lite cheddar","carrots","hard boiled eggs","Babybel"],shared:["turkey","cream cheese","hard boiled eggs"],note:"Roll tortilla with turkey + cream cheese + cheddar. Pack with eggs + veggies. Do it the night before — grab at 7:30am.",migraine:true,anxiety:true},
+  {id:17,name:"Tuna Snack Box",cat:"grab-go",effort:"green",time:"5 min",ingredients:["canned tuna","crackers","grapes","pretzels","hummus","cucumber"],shared:["canned tuna","grapes","cucumber","hummus"],note:"Mix tuna with Greek yogurt or mayo. Crackers, fruit, something crunchy. Already your natural snack style — just formalize it.",migraine:true,anxiety:true},
+  {id:18,name:"Sourdough Brie & Prosciutto",cat:"grab-go",effort:"yellow",time:"15 min",ingredients:["sourdough","brie","prosciutto","honeycrisp apple","arugula","hot honey","butter"],shared:["butter"],note:"Toast sourdough in butter. Melt brie under broiler. Layer prosciutto + apple + arugula + hot honey. Your 'I deserve something special' sandwich.",migraine:false,anxiety:false},
+  {id:19,name:"Mediterranean Chickpea Salad",cat:"salads",effort:"green",time:"10 min",ingredients:["canned chickpeas","English cucumber","cherry tomatoes","red onion","avocado","olives","lemon","olive oil","garlic powder"],shared:["cucumber","cherry tomatoes","olive oil","lemon","garlic powder","canned chickpeas"],note:"Chop + toss. Zero cooking. Keeps 3 days without avocado. Make a big batch Sunday.",migraine:true,anxiety:true},
+  {id:20,name:"High Protein Chickpea Edamame Bowl",cat:"salads",effort:"green",time:"10 min",ingredients:["canned chickpeas","frozen edamame (thawed)","cucumber","red onion","feta","sesame seeds","olive oil","lemon"],shared:["canned chickpeas","cucumber","feta","olive oil","lemon"],note:"54g protein in the whole bowl (18g/serving). Carolina Salazar's viral recipe. Thaw edamame, drain chickpeas, toss everything.",migraine:true,anxiety:true},
+  {id:21,name:"Chicken Tzatziki Bowl",cat:"salads",effort:"green",time:"10 min",ingredients:["cooked chicken","cucumber","Greek yogurt","lemon","garlic","olive oil","red onion"],shared:["Greek yogurt","cucumber","chicken breast","lemon","olive oil"],note:"Use leftover crockpot salsa chicken. Tzatziki = yogurt + cucumber + garlic + lemon. Gut-friendly, high protein.",migraine:false,anxiety:true},
+  {id:22,name:"Easy Grinder Salad",cat:"salads",effort:"green",time:"10 min",ingredients:["ham","salami","provolone","cherry tomatoes","cucumber","red onion","banana peppers","Italian dressing"],shared:["cherry tomatoes","cucumber"],note:"Jersey Mike's Sub in a Tub. All the grinder flavors, no bread needed.",migraine:false,anxiety:false},
+  {id:23,name:"Lemon Arugula Pasta Salad",cat:"salads",effort:"green",time:"15 min",ingredients:["farfalle","arugula","lemon","olive oil","parmesan"],shared:["parmesan","olive oil","pasta","lemon"],note:"Cook pasta, cool, toss with arugula + lemon + oil + parm. Room temp or cold. Tastes fancy, nearly zero effort.",migraine:false,anxiety:true},
+  {id:24,name:"Chicago Dog Pasta Salad",cat:"salads",effort:"green",time:"15 min",ingredients:["pasta","veggie dog","tomato","dill pickles","mustard","celery salt"],shared:["pasta"],note:"Cook pasta, slice veggie dog, toss with pickles + mustard + celery salt. Midwest nostalgia in a bowl.",migraine:false,anxiety:true},
+  {id:25,name:"Crispy Chicken Caesar Pasta Salad",cat:"salads",effort:"yellow",time:"25 min",ingredients:["chicken breast","panko breadcrumbs","garlic powder","penne","romaine","Caesar dressing","parmesan"],shared:["chicken breast","garlic powder","parmesan","pasta"],note:"53g protein. Kirsty Fletcher recipe. Coat chicken in panko + spices, bake crispy, toss with pasta + romaine.",migraine:false,anxiety:false},
+  {id:26,name:"Peach Burrata Salad",cat:"salads",effort:"green",time:"10 min",ingredients:["arugula","burrata","fresh peaches","cherries","basil","olive oil"],shared:["arugula","olive oil"],note:"Seasonal summer stunner. Layer arugula + burrata + sliced peaches + cherries + basil + olive oil. Make this when your girlfriend is over.",migraine:false,anxiety:false},
+  {id:27,name:"Street Corn Bowls",cat:"salads",effort:"yellow",time:"20 min",ingredients:["chicken breast","corn","romaine","feta or cotija","mayo","lime"],shared:["chicken breast","corn","feta"],note:"Skip chili powder entirely — still amazing. Sear chicken, mix corn with mayo + lime + cheese.",migraine:false,anxiety:false},
+  {id:28,name:"Black Bean & Corn Dip",cat:"salads",effort:"green",time:"10 min",ingredients:["canned black beans","canned corn","bell peppers","red onion","cherry tomatoes","feta","lime","olive oil"],shared:["corn","feta","cherry tomatoes","olive oil"],note:"Chop + toss with lime vinaigrette. Eat with chips, crackers, or rice. Makes a ton — snack all week.",migraine:true,anxiety:true},
+  {id:29,name:"Hydrating Fruit Salad",cat:"fruit-snacks",effort:"green",time:"10 min",ingredients:["watermelon","pineapple","blueberries","strawberries","kiwi","pomegranate seeds","honey","lemon","mint"],shared:["blueberries","strawberries","honey","lemon"],note:"Make a big bowl Sunday. Keeps 4-5 days. Honey + lemon keeps it fresh.",migraine:true,anxiety:true},
+  {id:30,name:"Pretty Fruit Salad",cat:"fruit-snacks",effort:"green",time:"10 min",ingredients:["mango","blueberries","strawberries","kiwi","grapes","pomegranate","orange"],shared:["blueberries","strawberries","grapes"],note:"Kate_cleanhome's 226K-liked version. The prettiest fruit salad ever. Make it for you.",migraine:true,anxiety:true},
+  {id:31,name:"Strawberry Watermelon Cucumber Salad",cat:"fruit-snacks",effort:"green",time:"10 min",ingredients:["watermelon","strawberries","cucumber","feta","mint","honey"],shared:["watermelon","strawberries","feta","honey","cucumber"],note:"Sweet + fresh + a little savory from the feta. Summer in a bowl.",migraine:true,anxiety:true},
+  {id:32,name:"Gut Healthy Apple Salad",cat:"fruit-snacks",effort:"green",time:"15 min",ingredients:["apples","cinnamon","Greek yogurt","almond butter","granola","honey"],shared:["Greek yogurt","honey","apples"],note:"Stew apples with cinnamon 8-10 min. Top with yogurt + almond butter + granola. Good for IBS and genuinely comforting.",migraine:true,anxiety:true},
+  {id:33,name:"Baked Sweet Potatoes",cat:"fruit-snacks",effort:"green",time:"45 min (2 hands-on)",ingredients:["sweet potatoes","olive oil","salt"],shared:["sweet potatoes","olive oil"],note:"Chelsea's method: no foil, directly on rack, 425°. Make 4 at once. Top with butter + salt or yogurt + honey.",migraine:true,anxiety:true},
+  {id:34,name:"Work Breakfast (office)",cat:"breakfast-drinks",effort:"green",time:"0 min",ingredients:["oatmeal (office)","banana (office)","apple (office)","yogurt (office)"],shared:[],note:"You have this at work! Oatmeal + banana = complete meal. Greek yogurt + apple = protein + fruit. Skip home breakfast entirely on these days.",migraine:true,anxiety:true},
+  {id:35,name:"Blueberry Chia Pudding",cat:"breakfast-drinks",effort:"green",time:"5 min + overnight",ingredients:["blueberries","chia seeds","almond milk","Greek yogurt","honey","lemon"],shared:["blueberries","Greek yogurt","honey","almond milk"],note:"Mix everything, fridge overnight. Make 2-3 at once. Grab on rough mornings — zero effort when you need it most.",migraine:true,anxiety:true},
+  {id:36,name:"Soy Egg Rice Bowl",cat:"breakfast-drinks",effort:"yellow",time:"15 min",ingredients:["sticky rice","spam or leftover protein","egg","soy sauce","sesame oil"],shared:["rice","eggs"],note:"Sally Ryu's breakfast. Deeply satisfying umami bowl. Green light mornings only.",migraine:false,anxiety:false},
+  {id:37,name:"Fruit-Forward Smoothie",cat:"breakfast-drinks",effort:"green",time:"3 min",ingredients:["frozen fruit","banana","Greek yogurt","almond milk","honey"],shared:["Greek yogurt","almond milk","honey","banana"],note:"Your comeback smoothie. Add spinach — truly undetectable. Liquid meal for anxiety days.",migraine:true,anxiety:true},
+  {id:38,name:"Iced Latte (Morning Anchor)",cat:"breakfast-drinks",effort:"green",time:"2 min",ingredients:["cold brew or espresso","milk","vanilla protein powder (optional)"],shared:[],note:"Your anchor. Add protein powder to make it count. Sip all morning. (Cold brew is lower-acid than soda — a gentler caffeine.)",migraine:false,anxiety:true},
+  {id:39,name:"Mashed Potatoes",cat:"comfort",effort:"green",time:"20 min or instant",ingredients:["potatoes or instant mashed","butter","milk","salt"],shared:["butter"],note:"HARD DAY APPROVED. Use instant — zero judgment. Soft, low-acid, genuinely healing. Add rotisserie chicken on top for protein.",migraine:true,anxiety:true},
+  {id:40,name:"Butter Toast",cat:"comfort",effort:"green",time:"2 min",ingredients:["bread","butter","salt or honey"],shared:["butter"],note:"Do not underestimate this. Warm, salty butter on toast is a complete emotional reset. Add honey or jam if you want sweetness.",migraine:true,anxiety:true},
+  {id:41,name:"Scrambled Eggs",cat:"comfort",effort:"green",time:"5 min",ingredients:["eggs","butter","salt","cheese (optional)"],shared:["eggs","butter"],note:"Low and slow in butter. Add cheese at the end. Soft scrambled eggs are GERD-friendly and genuinely soothing.",migraine:true,anxiety:true},
+  {id:42,name:"Cereal",cat:"comfort",effort:"green",time:"1 min",ingredients:["cereal","milk"],shared:[],note:"Valid. A meal. Full stop. No justification needed ever.",migraine:true,anxiety:true},
+  {id:43,name:"Buttered / Cheesy Noodles",cat:"comfort",effort:"green",time:"12 min",ingredients:["pasta","butter","parmesan or American cheese","salt"],shared:["pasta","butter","parmesan"],note:"Pasta + butter + cheese + splash of pasta water to make it silky. The original comfort food.",migraine:true,anxiety:true}
+];
+const categories=[{id:"all",label:"✨ All"},{id:"big-two",label:"🫕 Big Two"},{id:"grab-go",label:"🍱 Grab & Go"},{id:"salads",label:"🥗 Salads & Bowls"},{id:"fruit-snacks",label:"🍓 Fruit & Snacks"},{id:"breakfast-drinks",label:"☕ Breakfast"},{id:"comfort",label:"🥔 Comfort"}];
+const shopping=[
+  {cat:"🥩 Proteins (weekly)",items:["Rotisserie chicken","Ground beef or turkey","Turkey deli slices","Canned tuna (4-pack)","Canned chickpeas (2-3 cans)","Eggs (dozen)","Frozen dumplings","Greek yogurt (large tub)"]},
+  {cat:"🧀 Dairy",items:["Feta or cotija","Parmesan","Cream cheese","Butter","Babybel or string cheese","Colby Jack or cheddar","Cottage cheese","Almond milk"]},
+  {cat:"🍓 Produce",items:["Grapes","Strawberries + mixed berries","Bananas","Apples","Cherry tomatoes","English cucumber (2)","Baby carrots","Mini bell peppers","Sweet potatoes","Avocado","Frozen peas","Frozen edamame","Frozen fruit bags","Watermelon (in season)"]},
+  {cat:"🫙 Pantry Anchors",items:["Pasta: ring, shells, farfalle, ditalini, penne","Frozen tortellini","Canned french onion soup","Beef consommé","Canned black beans","Canned corn","Chia seeds","Honey","Soy sauce + sesame oil","Chicken broth","Beef broth","Sun-dried tomatoes"]},
+  {cat:"🥖 Breads & Wraps",items:["Sourdough (treat)","Pita bread","Spinach tortillas","Sandwich bread","Crackers / pretzel crisps"]},
+  {cat:"🧂 Flavor Shortcuts",items:["Everything bagel seasoning","Ranch seasoning","Garlic powder","Soy ginger sauce (TJ's)","Italian dressing","Caesar dressing","Dijon mustard"]}
+];
+
+// reflux triggers = acidic / citrus / tomato-forward
+const TRIGGERS=["tomato","salsa","marinara","sun-dried","lemon","lime","citrus","orange","pineapple","hot honey","ketchup","mustard","dijon","italian dressing","caesar","vinegar","banana peppers","olives","pickle","cherries"];
+const PROTEINS=["chicken","beef","turkey","tuna","egg","chickpea","edamame","yogurt","cottage cheese","salmon","spam","ham","salami","prosciutto","brie","tofu","black bean","protein powder"];
+function refluxOk(m){return !m.ingredients.some(i=>{const s=i.toLowerCase();return TRIGGERS.some(t=>s.includes(t));});}
+function hasProtein(m){return m.ingredients.some(i=>{const s=i.toLowerCase();return PROTEINS.some(t=>s.includes(t));});}
+
+let energy='all', cat='all', flares=new Set(), tab='meals';
+
+function setTab(t){tab=t;document.getElementById('tab-meals').classList.toggle('active',t==='meals');document.getElementById('tab-shop').classList.toggle('active',t==='shop');document.getElementById('mealsView').style.display=t==='meals'?'block':'none';document.getElementById('shopView').style.display=t==='shop'?'block':'none';if(t==='shop')renderShop();}
+
+function renderFilters(){
+  document.getElementById('energyChips').innerHTML=[['all','✨ Any'],['low','🌙 None — quick only'],['some','🌿 Some'],['good','☀️ Plenty']].map(([k,l])=>`<button class="chip ${energy===k?'on':''}" onclick="setEnergy('${k}')">${l}</button>`).join('');
+  document.getElementById('flareChips').innerHTML=[['reflux','🔥 Reflux-gentle'],['migraine','🪫 Migraine'],['anxiety','😰 Anxiety']].map(([k,l])=>`<button class="chip flare ${flares.has(k)?'on':''}" onclick="toggleFlare('${k}')">${l}</button>`).join('');
+  document.getElementById('catbar').innerHTML=categories.map(c=>`<button class="catchip ${cat===c.id?'on':''}" onclick="setCat('${c.id}')">${c.label}</button>`).join('');
+}
+function setEnergy(k){energy=k;render();}
+function setCat(k){cat=k;render();}
+function toggleFlare(k){flares.has(k)?flares.delete(k):flares.add(k);render();}
+
+function render(){
+  renderFilters();
+  const vis=allMeals.filter(m=>{
+    if(cat!=='all'&&m.cat!==cat)return false;
+    if(energy==='low'&&m.effort!=='green')return false;
+    if((energy==='some'||energy==='good'||energy==='all')&&false)return false;
+    if(flares.has('reflux')&&!refluxOk(m))return false;
+    if(flares.has('migraine')&&!m.migraine)return false;
+    if(flares.has('anxiety')&&!m.anxiety)return false;
+    return true;
+  });
+  document.getElementById('count').textContent=vis.length+' meals'+(flares.size||energy!=='all'||cat!=='all'?' matching':'');
+  document.getElementById('mealList').innerHTML=vis.map(m=>{
+    const rok=refluxOk(m),prot=hasProtein(m);
+    return `<div class="meal ${m.effort==='yellow'?'yellow':''}" onclick="this.classList.toggle('open')">
+      <div class="meal-top"><div><div class="meal-name">${m.name}</div><div class="meal-meta">⏱ ${m.time}</div></div><div class="caret">⌄</div></div>
+      <div class="badges">
+        <span class="badge ${m.effort==='green'?'b-green':'b-yellow'}">${m.effort==='green'?'🟢 easy':'🟡 some effort'}</span>
+        ${prot?'<span class="badge b-prot">💪 protein</span>':''}
+        ${rok?'<span class="badge b-reflux">🔥 reflux-gentle</span>':''}
+        ${m.migraine?'<span class="badge b-mig">🪫 migraine ok</span>':''}
+        ${m.anxiety?'<span class="badge b-anx">😰 anxiety ok</span>':''}
+      </div>
+      <div class="detail">
+        <div class="note">${m.note}</div>
+        <div class="ing-l">Ingredients</div>
+        <div class="ings">${m.ingredients.map(i=>`<span class="ing ${m.shared.includes(i)?'shared':''}">${m.shared.includes(i)?'⭐ ':''}${i}</span>`).join('')}</div>
+        ${m.shared.length?'<div class="shared-note">⭐ = shared ingredient — buy once, use across meals</div>':''}
+      </div>
+    </div>`;
+  }).join('')||'<div class="count">Nothing matches — loosen a filter.</div>';
+}
+
+function renderShop(){
+  const checks=JSON.parse(localStorage.getItem('meal_shop')||'{}');
+  let html=`<div class="strategy"><div class="st">💡 The strategy</div><p>These anchors show up across 3–8 meals each. One rotisserie chicken = 5 meals. One Greek yogurt tub = breakfasts, dressings, and protein all week. Buy in bulk, waste almost nothing.</p></div>`;
+  html+=shopping.map(s=>`<div class="shopgroup"><h3>${s.cat}</h3>${s.items.map(it=>{const k=escAttr(it);return `<div class="shopitem ${checks[it]?'done':''}" onclick="toggleShop('${k}')"><div class="box">${checks[it]?'✓':''}</div><span class="itxt">${it}</span></div>`;}).join('')}</div>`).join('');
+  html+=`<div class="store"><b>🏪 West Seattle store strategy</b><br><b>Trader Joe's:</b> frozen dumplings, tortellini, edamame, frozen fruit, TJ's cheddar, pita, almond milk, everything seasoning, soy ginger sauce<br><b>Admiral Safeway / QFC:</b> rotisserie chicken, deli turkey, canned goods, pasta, broth, staple produce<br><b>Met Market / Whole Foods:</b> burrata, fresh herbs, quality cheese, seasonal fruit (peaches, cherries, berries)</div>`;
+  document.getElementById('shopView').innerHTML=html;
+}
+function toggleShop(k){const checks=JSON.parse(localStorage.getItem('meal_shop')||'{}');checks[k]=!checks[k];localStorage.setItem('meal_shop',JSON.stringify(checks));renderShop();}
+function escAttr(s){return s.replace(/'/g,"\\'");}
+
+document.getElementById('sub').textContent=allMeals.length+' meals from your saves · filtered for your real life';
+render();
+</script>
+</body>
+</html>

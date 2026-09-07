@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DTC">
+<meta name="theme-color" content="#F4E3E6">
+<title>DTC</title>
+<link rel="apple-touch-icon" id="appleIcon" href="">
+<link rel="icon" id="favIcon" href="">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;600;700;800&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#F4E3E6; --paper:#FBEEF0; --white:#FFFCFB;
+    --espresso:#4A3730; --brown-mid:#8A6F66;
+    --rosewood:#C98695; --rosewood-dk:#A5636F; --mauve:#9E6072;
+    --moss:#6E7F4A; --moss-dk:#5C6C3C; --ochre:#D19A32; --ochre-dk:#B5822A; --rust:#B5665A;
+    --line:#EBD3D4; --gold:#D4A843;
+    --shadow-sm:0 2px 8px rgba(120,70,85,.12); --shadow-md:0 8px 24px rgba(120,70,85,.18);
+    --r:18px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--ivory);color:var(--espresso);font-family:'Nunito',sans-serif;-webkit-font-smoothing:antialiased}
+  #app{display:flex;flex-direction:column;height:100%;max-width:440px;margin:0 auto;position:relative;background:var(--ivory)}
+
+  /* HEADER */
+  .header{padding:calc(12px + env(safe-area-inset-top)) 18px 10px;background:linear-gradient(160deg,#C98499 0%,#9E6072 100%);color:#FFF6F8;position:relative;overflow:hidden;flex-shrink:0}
+  .header::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,244,246,.14) 1px,transparent 1px);background-size:18px 18px;pointer-events:none}
+  .header-top{display:flex;align-items:center;gap:11px;position:relative;z-index:1}
+  .title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;line-height:1}
+  .title small{display:block;font-family:'Nunito';font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#F6DEE4;margin-top:3px}
+  .date{margin-left:auto;text-align:right;font-size:11px;color:#F2D6DD;font-weight:600;line-height:1.3}
+  .reset-btn{margin-left:10px;background:rgba(255,244,246,.18);border:none;color:#FFF6F8;font-family:'Nunito';font-weight:800;font-size:11px;padding:8px 12px;border-radius:20px;cursor:pointer;flex-shrink:0}
+  .reset-btn:active{transform:scale(.95)}
+
+  .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 16px calc(96px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+  .content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+  .panel{display:none}.panel.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--ochre-dk);display:flex;align-items:center;gap:9px;margin:18px 2px 12px}
+  .eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
+  .voice{font-family:'Lora',serif;font-style:italic;color:var(--brown-mid);font-size:14px;line-height:1.5;margin:0 2px 14px}
+
+  /* MASCOT (the princess) */
+  .mascot-hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px;position:relative}
+  .mascot-wrap{position:relative;width:150px;height:156px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer}
+  .mascot{width:150px;height:156px;position:relative;transform-origin:center bottom;display:flex;align-items:flex-end;justify-content:center}
+  .mascot svg{width:100%;height:100%;display:block}
+  .mascot-img{height:154px;width:auto;display:block;filter:drop-shadow(0 3px 5px rgba(120,70,85,.18))}
+  .mascot.breathe{animation:mbreathe 3.8s ease-in-out infinite}
+  .mascot.float{animation:mfloat 2.6s ease-in-out infinite}
+  .mascot.shimmy{animation:mshimmy .6s ease-in-out 3}
+  @keyframes mbreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+  @keyframes mfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes mshimmy{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
+  .mascot .eyes-open{display:block}.mascot .eyes-closed{display:none}
+  .mascot.sleepy .eyes-open{display:none}.mascot.sleepy .eyes-closed{display:block}
+  .mascot-badge{position:absolute;top:26px;left:0;font-size:19px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+  .mascot-gem{position:absolute;bottom:6px;right:20px;font-size:18px;opacity:0;transition:opacity .4s}
+  .mascot.thriving .mascot-gem,.mascot.celebrating .mascot-gem{opacity:1}
+  .mascot-zzz{position:absolute;top:0;left:22px;font-size:16px;opacity:0}
+  .mascot.sleepy .mascot-zzz{opacity:.85}
+  .speech{margin-top:8px;background:var(--white);border-radius:16px;padding:9px 15px;font-family:'Lora',serif;font-style:italic;font-size:13.5px;color:var(--espresso);box-shadow:var(--shadow-sm);max-width:300px;text-align:center;line-height:1.4}
+
+  /* ENERGY */
+  .ask{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;margin:14px 2px 12px;text-align:center}
+  .energy{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+  .echip{border:2px solid var(--line);background:var(--white);border-radius:16px;padding:13px 12px;cursor:pointer;text-align:left;transition:all .15s;display:flex;align-items:center;gap:11px}
+  .echip:active{transform:scale(.97)}
+  .echip .ee{font-size:23px;line-height:1}
+  .echip .et{display:block;font-weight:800;font-size:15px;color:var(--espresso)}
+  .echip .es{display:block;font-size:11px;color:var(--brown-mid);margin-top:3px;line-height:1.25}
+  .modeline{display:flex;align-items:center;gap:8px;margin:2px 2px 12px;font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--brown-mid)}
+  .modeline .swap{margin-left:auto;font-size:11px;color:var(--mauve);background:var(--paper);padding:5px 11px;border-radius:14px;cursor:pointer;font-weight:800}
+
+  /* RIGHT NOW */
+  .nowcard{background:var(--white);border-radius:22px;padding:20px;box-shadow:var(--shadow-md);border-top:5px solid var(--rosewood);margin-bottom:6px}
+  .nowcard.e-low{border-top-color:var(--moss)}.nowcard.e-balanced{border-top-color:var(--ochre)}
+  .nowcard.e-high{border-top-color:var(--rust)}.nowcard.e-hyperfocus{border-top-color:var(--rosewood-dk)}
+  .now-kick{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--brown-mid);margin-bottom:10px}
+  .now-title{font-family:'Playfair Display',serif;font-size:23px;font-weight:700;line-height:1.15;color:var(--espresso)}
+  .now-sub{font-size:13px;color:var(--brown-mid);margin-top:7px;line-height:1.4}
+  .now-step{background:var(--paper);border-radius:12px;padding:11px 13px;margin-top:13px;font-size:13px;color:var(--espresso)}
+  .now-step b{color:var(--mauve);font-weight:800}
+  .now-btns{display:flex;gap:9px;margin-top:15px}
+  .hiddenline{text-align:center;font-size:11.5px;color:var(--brown-mid);margin:10px 2px 4px;font-family:'Lora',serif;font-style:italic}
+  .reassure{font-family:'Lora',serif;font-style:italic;color:var(--moss-dk);font-size:13px;text-align:center;margin-top:12px}
+  .guard{background:linear-gradient(150deg,#FBECE0 0%,#FDF4F1 100%);border:1px solid #EAD3C4;border-left:4px solid var(--ochre);border-radius:16px;padding:13px 15px;margin-bottom:12px}
+  .guard .gt{font-weight:800;font-size:13px;color:var(--ochre-dk);margin-bottom:4px}
+  .guard .gb{font-size:12.5px;color:var(--brown-mid);line-height:1.45}
+  .guard .glink{margin-top:9px;display:inline-block;font-size:12px;font-weight:800;color:var(--mauve);background:var(--white);padding:7px 13px;border-radius:12px;cursor:pointer}
+
+  /* BUTTONS */
+  .btn{border:none;border-radius:13px;font-family:'Nunito';font-weight:800;font-size:14px;padding:12px 16px;cursor:pointer;transition:transform .12s;white-space:nowrap}
+  .btn:active{transform:scale(.96)}
+  .btn-primary{background:var(--moss);color:#fff;flex:1}
+  .btn-soft{background:var(--paper);color:var(--brown-mid)}
+  .btn-sm{padding:8px 12px;font-size:12px;border-radius:11px}
+  .btn-ghost{background:var(--ivory);color:var(--brown-mid)}
+  .btn-ochre{background:var(--ochre);color:var(--espresso)}
+
+  /* MUSTS (seeds) */
+  .musts{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:6px 0 8px}
+  .seed{border:2px solid var(--line);background:var(--white);border-radius:16px;padding:12px 6px;cursor:pointer;text-align:center;position:relative;transition:all .15s}
+  .seed:active{transform:scale(.95)}
+  .seed.done{border-color:var(--moss);background:#EEF2E4}
+  .seed .si{font-size:22px}
+  .seed .sl{font-size:11px;font-weight:800;color:var(--espresso);margin-top:5px;line-height:1.2}
+  .seed .sc{position:absolute;top:6px;right:8px;font-size:13px;color:var(--moss);opacity:0}
+  .seed.done .sc{opacity:1}
+  .justmeds{text-align:center;font-size:12px;color:var(--mauve);font-weight:700;margin:2px 0 10px;cursor:pointer}
+  .streak-mini{background:var(--paper);border-radius:14px;padding:11px 14px;text-align:center;font-size:13px;font-weight:700;color:var(--espresso);margin-bottom:8px}
+  /* 28-day grid — a missed day is one fewer dot, never a reset */
+  .dotgrid{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-bottom:9px}
+  .dotgrid i{aspect-ratio:1;border-radius:50%;background:var(--line)}
+  .dotgrid i.on{background:linear-gradient(155deg,var(--rosewood),var(--mauve))}
+  .sm-n{font-size:13.5px;font-weight:700}
+  .sm-h{display:block;font-weight:600;font-size:11px;color:var(--brown-mid);margin-top:3px}
+  /* habits the app has stopped asking about */
+  .autopilot{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:9px 12px;margin:0 0 9px;font-size:12px;color:var(--brown-mid);font-weight:600}
+  .autopilot .ap-t{font-size:9.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--moss-dk)}
+  .autopilot .ap-i{font-size:14px}
+  .autopilot .ap-chip{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;color:var(--espresso);font-weight:700}
+  .autopilot .ap-chip b{color:var(--moss-dk)}
+  .autopilot .ap-chip:active{transform:scale(.96)}
+  .autopilot .ap-off{margin-left:auto;font-size:10px;font-weight:600;color:var(--brown-mid);white-space:nowrap;font-style:italic}
+  .streak-mini b{color:var(--ochre-dk)}
+
+  /* QUICK ROW */
+  /* compact hoard strip — one slim line, taps through to the vault */
+  .hoardstrip{display:flex;align-items:center;gap:11px;background:linear-gradient(160deg,#3A2817,#5A3E22);border:1.5px solid #C79E32;border-radius:14px;padding:10px 14px;margin:10px 0 0;text-decoration:none;box-shadow:0 3px 10px rgba(90,62,34,.22)}
+  .hoardstrip .hs-c{font-size:19px;flex-shrink:0}
+  .hoardstrip .hs-v{display:block;font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:#FBE9B4;line-height:1.05}
+  .hoardstrip .hs-l{display:block;font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#D9B764;margin-top:3px}
+  .hoardstrip .hs-t{margin-left:auto;font-size:15px;letter-spacing:-3px;flex-shrink:0}
+  .hoardstrip .hs-go{color:#D9B764;font-size:17px;font-weight:800;margin-left:9px;flex-shrink:0}
+  /* the walk — the cheapest, least self-conscious option, so it leads */
+  .walkcard{background:linear-gradient(155deg,#EAF0E2,#F7F2E8);border:1px solid var(--line);border-left:4px solid var(--moss);border-radius:18px;padding:15px 16px;margin:4px 0 10px;box-shadow:var(--shadow-sm)}
+  .walkcard .wk-h{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--espresso)}
+  .walkcard .wk-s{font-size:12.5px;color:var(--brown-mid);margin-top:2px}
+  .walkcard .wk-line{display:flex;align-items:center;gap:9px;background:var(--white);border-radius:12px;padding:9px 11px;margin-top:11px}
+  .walkcard .wk-e{font-size:18px}
+  .walkcard .wk-song{font-size:13px;font-weight:700;color:var(--mauve);text-decoration:none;flex:1}
+  .walkcard .wk-n{font-size:13px;color:var(--espresso);margin-top:10px;line-height:1.5}
+  .walkcard .wk-n b{color:var(--moss-dk)}
+  .walkcard .wk-btns{display:flex;gap:8px;margin-top:13px}
+  .walkcard .wk-btns .btn{flex:1}
+  .onepick{margin:4px 0 2px}
+  .op-f{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--brown-mid);font-weight:600;padding:2px 4px 0}
+  .op-next{margin-left:auto;color:var(--mauve);font-weight:800;cursor:pointer;white-space:nowrap}
+  .nopick{background:var(--paper);border:2px dashed var(--line);border-radius:15px;padding:14px;font-size:13px;color:var(--brown-mid);line-height:1.55;margin:4px 0}
+  .nopick b{color:var(--espresso)}
+  .bounceline,.browseline{font-size:11.5px;font-weight:700;color:var(--brown-mid);cursor:pointer;padding:7px 4px;user-select:none}
+  .rainline{font-size:11.5px;font-weight:700;color:var(--brown-mid);padding:10px 4px 4px}
+  .libwrap{border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
+  /* personal bests — monotonic by construction */
+  .pbrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper)}
+  .pbrow:last-child{border-bottom:none}
+  .pbi{font-size:18px;flex-shrink:0}
+  .pbl{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--espresso)}
+  .pbb{font-size:11px;font-weight:600;color:var(--brown-mid);margin-top:1px}
+  .pbb b{color:var(--ochre-dk)}
+  .pbin{width:62px;flex-shrink:0;border:1.5px solid var(--line);border-radius:10px;padding:7px 8px;font-family:'Nunito';font-size:13.5px;font-weight:700;text-align:center;color:var(--espresso)}
+  .pbin:focus{outline:none;border-color:var(--rosewood)}
+  .pbgo{flex-shrink:0;border:none;background:var(--moss);color:#fff;border-radius:10px;padding:8px 11px;font-family:'Nunito';font-weight:800;font-size:12px;cursor:pointer}
+  .pbgo:active{transform:scale(.96)}
+  /* trip countdowns — a date, nothing more */
+  .triprow{display:flex;gap:7px;flex-wrap:wrap;margin:2px 0 4px}
+  .tripchip{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--brown-mid);cursor:pointer}
+  .tripchip b{color:var(--mauve)}
+  .quickrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:6px 0}
+  .qbtn{display:block;text-align:center;text-decoration:none;background:var(--white);border:1px solid var(--line);border-radius:14px;padding:13px 8px;color:var(--espresso);font-weight:800;font-size:13px;box-shadow:var(--shadow-sm)}
+  .qbtn:active{transform:scale(.97)}
+  .qbtn .qs{display:block;font-weight:600;font-size:10px;color:var(--brown-mid);margin-top:2px}
+
+  /* WORK STRIP (read-only) */
+  .workstrip{background:linear-gradient(150deg,#EDE4F0,#FBEEF0);border:1px solid #E3D2E8;border-left:4px solid var(--mauve);border-radius:16px;padding:14px 16px;margin:6px 0}
+  .workstrip .wh{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--mauve);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .workstrip .wi{font-size:13px;color:var(--espresso);padding:5px 0;display:flex;gap:9px;align-items:flex-start;line-height:1.35}
+  .workstrip .wi .wd{width:6px;height:6px;border-radius:50%;background:var(--mauve);flex-shrink:0;margin-top:6px}
+  .workstrip .wnote{font-size:11px;color:var(--brown-mid);font-family:'Lora',serif;font-style:italic;margin-top:8px}
+  .workstrip .wlink{margin-top:10px;display:inline-block;font-size:12px;font-weight:800;color:var(--mauve);background:var(--white);padding:7px 13px;border-radius:12px;text-decoration:none}
+
+  /* JOURNAL */
+  .journal{background:linear-gradient(150deg,#FBE1E7 0%,#FDF3F1 100%);border-radius:var(--r);padding:15px 16px;margin:10px 0 12px;box-shadow:var(--shadow-sm);border:1px solid var(--line)}
+  .journal .jq{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;line-height:1.3;margin-bottom:10px}
+  .journal textarea{width:100%;border:none;background:var(--white);border-radius:10px;padding:10px 12px;font-family:'Nunito';font-size:13.5px;color:var(--espresso);resize:none;min-height:46px;line-height:1.4}
+  .journal textarea:focus{outline:2px solid var(--rosewood)}
+  .jlabel{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ochre-dk);margin:10px 0 5px}
+  .saved{font-size:11px;color:var(--moss-dk);font-weight:700;margin-top:7px;opacity:0;transition:opacity .3s}
+  .saved.show{opacity:1}
+  .dumpbtn{width:100%;background:var(--paper);border:2px dashed var(--line);border-radius:15px;padding:13px;color:var(--brown-mid);font-weight:800;font-size:13.5px;cursor:pointer;margin-top:6px}
+  .dumpbtn:active{background:var(--ivory)}
+
+  /* CARDS (people/rhythms/learn) */
+  .card{background:var(--white);border-radius:var(--r);padding:14px 16px;margin-bottom:11px;box-shadow:var(--shadow-sm);border-left:4px solid var(--rosewood);position:relative}
+  .card.overdue{border-left-color:var(--rust)} .card.soon{border-left-color:var(--ochre)}
+  .card-title{font-weight:800;font-size:15px;color:var(--espresso);line-height:1.25}
+  .card-sub{font-size:12.5px;color:var(--brown-mid);margin-top:3px;line-height:1.4}
+  .card-nudge{font-family:'Lora',serif;font-style:italic;font-size:13px;color:var(--brown-mid);margin-top:6px}
+  .effort{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle}
+  .effort.low{background:#EEF2E4;color:var(--moss-dk)} .effort.med{background:#FBF0D9;color:var(--ochre-dk)} .effort.high{background:#F6E1DA;color:var(--rust)}
+  .pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:11px;background:var(--ivory);color:var(--brown-mid)}
+  .pill.due{background:#F3D9D2;color:var(--rust)} .pill.ok{background:#EEF2E4;color:var(--moss-dk)}
+  .btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .icon-x{position:absolute;top:10px;right:12px;width:22px;height:22px;border-radius:50%;background:var(--ivory);color:var(--brown-mid);border:none;font-size:13px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+  .addbar{width:100%;background:var(--paper);border:2px dashed var(--line);border-radius:14px;padding:13px;color:var(--brown-mid);font-weight:800;font-size:13.5px;cursor:pointer;margin-bottom:14px}
+  .addbar:active{background:var(--ivory)}
+  .lrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .lcap{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--brown-mid);width:48px}
+  .lchip{border:1.5px solid var(--line);background:var(--white);border-radius:14px;padding:6px 11px;font-size:12px;font-weight:800;color:var(--brown-mid);cursor:pointer}
+  .lchip.on{background:var(--rosewood);color:#fff;border-color:var(--rosewood)}
+  .empty{text-align:center;padding:26px 20px;color:var(--brown-mid)}
+  .empty .em{font-size:30px;margin-bottom:10px}
+  .empty p{font-family:'Lora',serif;font-style:italic;font-size:14px;line-height:1.5}
+
+  /* CHORES */
+  .chore-block{background:var(--white);border-radius:14px;margin-bottom:9px;box-shadow:var(--shadow-sm);border-left:4px solid var(--line);overflow:hidden}
+  .chore-block.state-partial{border-left-color:var(--ochre)}
+  .chore-block.state-done{border-left-color:var(--moss)}
+  .chore-row{display:flex;align-items:center;gap:11px;padding:12px 14px}
+  .chore-check{width:24px;height:24px;border-radius:8px;border:2px solid var(--rosewood);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+  .chore-check.partial{background:var(--ochre);border-color:var(--ochre)}.chore-check.partial::after{content:'–'}
+  .chore-check.done{background:var(--moss);border-color:var(--moss)}.chore-check.done::after{content:'✓'}
+  .chore-name{flex:1;font-weight:800;font-size:14px;color:var(--espresso);cursor:pointer}
+  .chore-caret{color:var(--brown-mid);cursor:pointer;font-size:14px;transition:transform .2s}
+  .chore-block.open .chore-caret{transform:rotate(180deg)}
+  .chore-subs{display:none;padding:0 14px 12px 49px;flex-direction:column;gap:7px}
+  .chore-block.open .chore-subs{display:flex}
+  .sub-item{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;color:var(--espresso)}
+  .sub-box{width:18px;height:18px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+  .sub-item.checked .sub-box{background:var(--moss);border-color:var(--moss)}.sub-item.checked .sub-box::after{content:'✓'}
+  .sub-item.checked span{text-decoration:line-through;color:var(--brown-mid)}
+  .sub-writein{width:100%;border:1.5px dashed var(--line);border-radius:10px;padding:8px 10px;font-family:'Nunito';font-size:13px;color:var(--espresso);margin-top:2px}
+  .sub-writein:focus{outline:none;border-color:var(--rosewood)}
+
+  /* VIDEO / MUSIC CARDS */
+  .cat{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--brown-mid);margin:14px 2px 8px}
+  .vcard{display:flex;align-items:center;gap:12px;background:var(--white);border-radius:14px;padding:12px 14px;margin-bottom:9px;box-shadow:var(--shadow-sm);text-decoration:none;color:var(--espresso);border-left:4px solid var(--rosewood)}
+  .vcard:active{transform:scale(.98)}
+  .vcard .vi{font-size:22px;flex-shrink:0}
+  .vcard .vt{font-weight:800;font-size:13.5px;line-height:1.2}
+  .vcard .vd{font-size:11.5px;color:var(--brown-mid);margin-top:2px;line-height:1.3}
+  .vcard .vdur{margin-left:auto;font-size:11px;font-weight:800;color:var(--mauve);flex-shrink:0}
+
+  /* TAB BAR */
+  .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;background:linear-gradient(0deg,#8E5566 0%,#9E6072 100%);display:flex;padding:8px 6px calc(10px + env(safe-area-inset-bottom));gap:4px;z-index:100}
+  .tab{flex:1;border:none;background:transparent;color:#E0B8C3;padding:7px 3px;border-radius:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .18s}
+  .tab .ti{font-size:18px;line-height:1}
+  .tab .tl{font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
+  .tab.active{background:rgba(255,244,246,.22);color:#FFF6F8}
+
+  /* MODAL */
+  .modal-bg{position:fixed;inset:0;background:rgba(74,45,55,.55);display:none;align-items:flex-end;justify-content:center;z-index:200}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--paper);width:100%;max-width:440px;border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:var(--shadow-md);animation:slideup .28s ease;max-height:90vh;overflow-y:auto}
+  @keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+  .modal h3{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:4px}
+  .modal .mdesc{font-size:12.5px;color:var(--brown-mid);margin-bottom:16px;line-height:1.4}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--brown-mid);margin-bottom:5px}
+  .field input,.field select{width:100%;border:1.5px solid var(--line);background:var(--white);border-radius:11px;padding:11px 12px;font-family:'Nunito';font-size:14px;color:var(--espresso)}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--rosewood)}
+  .script-box{background:var(--espresso);color:#F5E6EA;border-radius:12px;padding:13px 14px;font-size:13px;line-height:1.5;margin:6px 0 4px;white-space:pre-wrap}
+  .steps{font-size:12.5px;color:var(--brown-mid);line-height:1.6;margin:10px 0}
+  .steps b{color:var(--espresso)}
+  .reset-opt{display:flex;align-items:center;gap:12px;background:var(--white);border-radius:14px;padding:13px 15px;margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow-sm)}
+  .reset-opt:active{transform:scale(.98)}
+  .reset-opt .ro-e{font-size:22px}.reset-opt .ro-t{font-weight:800;font-size:14px}.reset-opt .ro-s{font-size:11.5px;color:var(--brown-mid);margin-top:2px}
+  .breathe-wrap{text-align:center;padding:10px 0 4px}
+  .breath-circle{width:150px;height:150px;border-radius:50%;margin:14px auto;background:radial-gradient(circle,#E8B4C0 0%,#C98499 70%);box-shadow:0 0 40px rgba(201,132,153,.5);transition:transform 4s ease-in-out}
+  .breath-phase{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--mauve);min-height:30px}
+  .breath-count{font-size:12px;color:var(--brown-mid);margin-top:4px}
+  .dump-item{background:var(--white);border-radius:12px;padding:11px 13px;margin-bottom:8px;box-shadow:var(--shadow-sm);font-size:13.5px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+  .dump-item .dtext{flex:1;min-width:0}.dump-item .dx{color:var(--brown-mid);cursor:pointer;font-weight:800}
+  .triage{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .triage button{background:var(--paper);border:none;border-radius:10px;padding:5px 10px;font-family:'Nunito';font-weight:800;font-size:11px;color:var(--mauve);cursor:pointer}
+  .btn.rec{background:var(--rosewood)!important;color:#fff!important;animation:pulserec 1s infinite}
+  @keyframes pulserec{0%,100%{opacity:1}50%{opacity:.55}}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:8px 0 4px}
+  .stat{background:var(--white);border-radius:14px;padding:14px;box-shadow:var(--shadow-sm)}
+  .stat .sv{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--moss-dk);line-height:1}
+  .stat.rose .sv{color:var(--rosewood-dk)}.stat.ochre .sv{color:var(--ochre-dk)}.stat.rust .sv{color:var(--rust)}
+  .stat .sl{font-size:11px;color:var(--brown-mid);font-weight:700;margin-top:6px;line-height:1.3}
+  .ec-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap}
+  .ec-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--brown-mid);width:52px}
+  .ec-pill{border:1.5px solid var(--line);background:var(--white);border-radius:14px;padding:7px 11px;font-size:12px;font-weight:700;color:var(--espresso);cursor:pointer}
+  .ec-pill.sel{background:var(--rosewood);color:#fff;border-color:var(--rosewood)}
+
+  /* COUCH LAUNCHER + QUICK LOG */
+  .couch-btn{width:100%;background:linear-gradient(150deg,#F3E0D2,#FBEEF0);border:1px solid #EAD3C4;border-left:4px solid var(--rust);border-radius:16px;padding:14px;color:var(--espresso);font-weight:800;font-size:14.5px;cursor:pointer;margin:2px 0 10px;display:flex;align-items:center;justify-content:center;gap:9px}
+  .couch-btn:active{transform:scale(.98)}
+  .couch-btn .cse{font-size:11px;font-weight:700;color:var(--brown-mid);display:block}
+  .qlog{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:2px 0 10px}
+  .ql{border:1.5px solid var(--line);background:var(--white);border-radius:13px;padding:9px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:19px;line-height:1}
+  .ql span{font-size:9.5px;font-weight:800;color:var(--brown-mid);text-transform:uppercase;letter-spacing:.3px}
+  .ql:active{transform:scale(.95)}
+  .ql.on{background:#EEF2E4;border-color:var(--moss)}.ql.on span{color:var(--moss-dk)}
+
+  /* COMMUTE COOL-DOWN */
+  .commute-grid{display:grid;grid-template-columns:1fr;gap:9px;margin:2px 0 6px}
+  .cbtn{display:flex;align-items:center;gap:13px;background:var(--white);border:none;border-left:4px solid var(--mauve);border-radius:14px;padding:13px 16px;cursor:pointer;box-shadow:var(--shadow-sm);text-align:left}
+  .cbtn:active{transform:scale(.98)}
+  .cbtn .ce{font-size:23px;flex-shrink:0}
+  .cbtn .ct{font-weight:800;font-size:14px;color:var(--espresso);display:block}
+  .cbtn .cs{font-size:11.5px;color:var(--brown-mid);display:block;margin-top:1px}
+  .mantra{font-family:'Lora',serif;font-size:16px;line-height:1.7;color:var(--espresso);text-align:center;background:var(--white);border-radius:16px;padding:20px 18px;margin:6px 0 14px;box-shadow:var(--shadow-sm)}
+  .mantra b{color:var(--mauve);font-style:italic}
+
+  /* BURN ANIMATION */
+  .burn-stage{position:relative;height:150px;display:flex;align-items:center;justify-content:center;margin:8px 0}
+  .burn-stage .paper{font-size:60px;transition:transform 1.6s ease-in,opacity 1.6s ease-in,filter 1.6s}
+  .burn-stage .paper.burning{transform:scale(.35) rotate(25deg) translateY(30px);opacity:0;filter:sepia(1) saturate(3) hue-rotate(-15deg)}
+  .burn-stage .flame{position:absolute;font-size:52px;opacity:0;transform:translateY(20px) scale(.5)}
+  .burn-stage .flame.lit{animation:flameup 1.9s ease-out forwards}
+  @keyframes flameup{0%{opacity:0;transform:translateY(20px) scale(.5)}30%{opacity:1;transform:translateY(0) scale(1.1)}70%{opacity:1;transform:translateY(-8px) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(.7)}}
+
+  /* GARDEN INVENTORY */
+  .inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:2px 0 4px}
+  .inv-item{background:var(--white);border-radius:13px;padding:11px 4px;text-align:center;box-shadow:var(--shadow-sm);border:1.5px solid var(--line)}
+  .inv-item.t-uncommon{border-color:var(--ochre);background:#FBF4E4}
+  .inv-item.t-rare{border-color:var(--rosewood-dk);background:#F8E9EE}
+  .inv-item .ie{font-size:26px;line-height:1}
+  .inv-item .il{font-size:9.5px;font-weight:800;color:var(--brown-mid);margin-top:4px;line-height:1.15}
+
+  /* DAILY BLOOM BAR */
+  .bloom{display:flex;align-items:center;gap:9px;margin:4px 2px 12px}
+  .bloom .bloom-track{flex:1;height:14px;border-radius:10px;background:var(--paper);border:1px solid var(--line);overflow:hidden;position:relative}
+  .bloom .bloom-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--dusty-pink),var(--rosewood) 60%,var(--gold));transition:width .5s ease}
+  .bloom .bloom-cap{font-size:16px;flex-shrink:0}
+  .bloom .bloom-pct{font-size:11px;font-weight:800;color:var(--brown-mid);flex-shrink:0;width:34px;text-align:right}
+
+  /* STAT BARS (Royal Profile) */
+  .statrow{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .stat-ico{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--paper);border:1px solid var(--line);flex-shrink:0}
+  .stat-main{flex:1;min-width:0}
+  .stat-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+  .stat-name{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--espresso)}
+  .stat-lv{font-size:10px;font-weight:800;color:var(--ochre-dk)}
+  .stat-track{height:12px;border-radius:8px;background:var(--paper);border:1px solid var(--line);overflow:hidden}
+  .stat-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--moss),var(--sage,#7A9E7E));transition:width .5s ease}
+  .statrow.s-body .stat-fill{background:linear-gradient(90deg,var(--rust),var(--rosewood))}
+  .statrow.s-mind .stat-fill{background:linear-gradient(90deg,var(--mauve),var(--rosewood-dk))}
+  .statrow.s-social .stat-fill{background:linear-gradient(90deg,var(--ochre),var(--gold))}
+  .statrow.s-home .stat-fill{background:linear-gradient(90deg,var(--moss-dk),var(--moss))}
+  .statrow.s-growth .stat-fill{background:linear-gradient(90deg,var(--rosewood),var(--gold))}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-top">
+      <div><div class="title">DTC<small id="hpSub">your life, on track</small></div></div>
+      <div class="date" id="dateBox"></div>
+      <button class="reset-btn" onclick="openReset()">🌬️ Reset</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- NOW -->
+    <section class="panel active" id="panel-now">
+      <div class="mascot-hero">
+        <div class="mascot-wrap" onclick="openGarden()">
+          <div class="mascot sleepy breathe" id="mascot">
+            <img class="mascot-img" id="mascotImg" src="assets/princess_full.png" alt="princess">
+            <div class="mascot-badge" id="mascotBadge">🌙</div>
+            <div class="mascot-gem" id="mascotGem">💎</div>
+            <div class="mascot-zzz" id="mascotZzz">💤</div>
+          </div>
+        </div>
+        <div class="speech" id="speech">Hey. Let's take it one thing at a time.</div>
+      </div>
+      <div class="bloom" id="bloom"></div>
+      <div id="nowBody"></div>
+      <button class="couch-btn" onclick="openCouch()">🛋️ I'm stuck on the couch<span class="cse">one tiny thing, zero deciding</span></button>
+      <div class="musts" id="musts"></div>
+      <div id="autopilot"></div>
+      <div class="qlog" id="qlog"></div>
+      <div class="justmeds" id="justMedsLink" onclick="justMeds()">or: just meds today — that's enough 💊</div>
+      <div class="streak-mini" id="streakMini"></div>
+      <div id="eveningNudge"></div>
+      <a class="hoardstrip" href="financial.html" id="hoardStrip"></a>
+      <div class="quickrow">
+        <a class="qbtn" href="financial.html">💰 Money<span class="qs">payday & goals</span></a>
+        <a class="qbtn" href="meals.html">🍽️ Meals<span class="qs">& shopping</span></a>
+      </div>
+      <button class="dumpbtn" onclick="openDump()">🧠 Brain dump — catch a thought, route it later</button>
+      <div class="btn-row"><button class="btn btn-ghost" style="width:100%" onclick="openPatterns()">Show my last 30 days</button></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" style="flex:1;font-size:11.5px" onclick="exportAll()">⬇︎ Back up my data</button>
+        <button class="btn btn-ghost" style="flex:1;font-size:11.5px" onclick="document.getElementById('importFile').click()">⬆︎ Restore</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importAll(this)">
+    </section>
+
+    <!-- PEOPLE -->
+    <section class="panel" id="panel-people">
+      <div class="eyebrow">People</div>
+      <div class="voice">The ones worth keeping close. Tap when you reach out — I only count what you log (I can't see your texts).</div>
+      <button class="addbar" onclick="openPersonForm()">+ Add someone</button>
+      <div id="peopleList"></div>
+    </section>
+
+    <!-- LIFE -->
+    <section class="panel" id="panel-life">
+      <div class="quickrow" style="margin-top:4px">
+        <a class="qbtn" href="financial.html">💰 Money<span class="qs">payday & goals</span></a>
+        <a class="qbtn" href="meals.html">🍽️ Meals<span class="qs">& shopping</span></a>
+      </div>
+      <div class="eyebrow">This Week's Chores</div>
+      <div class="voice">Check the whole thing, or open it and get credit for the parts you did. Half counts.</div>
+      <div id="choreBlocks"></div>
+      <div class="eyebrow">Rhythms</div>
+      <div class="voice">Recurring life admin — appointments, upkeep. Stays quiet until something's due.</div>
+      <button class="addbar" onclick="openRhythmForm()">+ Add a rhythm</button>
+      <div id="rhythmList"></div>
+    </section>
+
+    <!-- CARE -->
+    <section class="panel" id="panel-care">
+      <div id="tripRow"></div>
+      <div class="eyebrow">Move</div>
+      <div class="voice">Nothing here needs you to bounce. Pick a type and I'll choose one — or just take the walk.</div>
+      <div id="moveList"></div>
+      <button class="addbar" onclick="openMoveForm()" style="margin-top:12px">+ Add your own video (TikTok, YouTube, IG…)</button>
+      <div class="browseline" style="text-align:center" onclick="copyMoves()">📋 copy my saved videos (to send somewhere)</div>
+      <div class="eyebrow">Personal bests</div>
+      <div class="voice">Two push-ups becomes four. I only ever tell you when you beat one.</div>
+      <div class="card" id="pbList"></div>
+      <div class="eyebrow">Self-care upkeep</div>
+      <div class="voice">Haircut, nails, massage, groceries — the good maintenance. I nudge when it's been a while.</div>
+      <button class="addbar" onclick="openRhythmForm('','physical')">+ Add self-care</button>
+      <div id="careRhythms"></div>
+      <div class="eyebrow">Reset your nervous system</div>
+      <div class="voice">Sixty seconds to tell your body it's safe.</div>
+      <button class="addbar" onclick="openReset()" style="border-style:solid;background:var(--white)">🌬️ Open a reset →</button>
+      <div class="eyebrow">Commute cool-down</div>
+      <div class="voice">For the drive home from Kent — leave work at work.</div>
+      <div class="commute-grid">
+        <button class="cbtn" onclick="airlock()"><span class="ce">🔒</span><span><span class="ct">Airlock mantra</span><span class="cs">reframe + 15-sec grounding pulse</span></span></button>
+        <button class="cbtn" onclick="burnDay()"><span class="ce">🔥</span><span><span class="ct">Burn the day</span><span class="cs">vent it, watch it compost away</span></span></button>
+        <button class="cbtn" onclick="gratitude3()"><span class="ce">🌾</span><span><span class="ct">Three-word gratitude</span><span class="cs">quick reset before you drive</span></span></button>
+      </div>
+      <div class="eyebrow">Evening check-in</div>
+      <div class="voice">How did the body actually feel today? (for spotting patterns)</div>
+      <div class="card" id="eveningCard"></div>
+      <div class="eyebrow">Focus sounds</div>
+      <div id="soundList"></div>
+    </section>
+
+    <!-- PROFESSIONAL: deliverables + learning -->
+    <section class="panel" id="panel-learn">
+      <div class="eyebrow">On My Plate</div>
+      <div class="voice">Your main deliverables — a glance so nothing slips, not a task list. Check off or add your own.</div>
+      <div class="workstrip" id="workStrip"></div>
+      <button class="couch-btn" style="border-left-color:var(--mauve);background:linear-gradient(150deg,#EDE4F0,#FBEEF0)" onclick="aiByte()">🧠 Feed me one byte<span class="cse">a 60-second AI concept for your 2026 goals</span></button>
+      <div class="eyebrow">Learning</div>
+      <div class="voice">Sorted by energy and free time — pick what you've actually got. Grouped ①②③ by tier: foundation → builder → differentiator.</div>
+      <div class="btn-row"><button class="btn btn-ochre" style="width:100%" onclick="surfaceLearn()">Pick one for my energy →</button></div>
+      <button class="addbar" onclick="openLearnForm()">+ Add to the queue</button>
+      <div id="learnList"></div>
+    </section>
+  </div>
+
+  <nav class="tabbar">
+    <button class="tab active" data-tab="now" onclick="go('now')"><span class="ti">👑</span><span class="tl">Now</span></button>
+    <button class="tab" data-tab="people" onclick="go('people')"><span class="ti">💬</span><span class="tl">People</span></button>
+    <button class="tab" data-tab="life" onclick="go('life')"><span class="ti">🏠</span><span class="tl">Life</span></button>
+    <button class="tab" data-tab="care" onclick="go('care')"><span class="ti">🌿</span><span class="tl">Care</span></button>
+    <button class="tab" data-tab="learn" onclick="go('learn')"><span class="ti">💼</span><span class="tl">Work</span></button>
+  </nav>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
+
+<script>
+/* ============ DATA LAYER ============ */
+const DB={get(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch(e){return f}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
+const uid=()=>Math.random().toString(36).slice(2,9);
+function isoDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+const todayISO=()=>isoDate(new Date());
+function offset(d){const x=new Date();x.setDate(x.getDate()+d);return isoDate(x);}
+function daysBetween(iso){if(!iso)return null;const d=new Date(iso+'T00:00:00'),t=new Date(todayISO()+'T00:00:00');return Math.round((t-d)/86400000);}
+function weekKey(){const d=new Date();const jan1=new Date(d.getFullYear(),0,1);const wk=Math.ceil((((d-jan1)/86400000)+jan1.getDay()+1)/7);return `week_${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;}
+function todayKey(){return `day_${todayISO()}`;}
+function getDay(){const raw=localStorage.getItem(todayKey());if(raw)return JSON.parse(raw);
+  return {meds:false,vibration:false,movement:false,breakfast:false,lunch:false,energy:null,head:null,gut:null,showed_up:false,timestamp:'',movement_type:null,movement_notes:''};}
+function saveDay(d){localStorage.setItem(todayKey(),JSON.stringify(d));}
+function getWeek(){const raw=localStorage.getItem(weekKey());if(raw)return JSON.parse(raw);
+  return {dishes:false,laundry_wash:false,laundry_away:false,living_area:false,bathroom:false,completed_full_week:false,bonus_tasks:[],chore_sub:{}};}
+function saveWeek(w){localStorage.setItem(weekKey(),JSON.stringify(w));}
+function getDiamonds(){return DB.get('diamonds',[]);}
+function getFlowers(){return DB.get('flowers',[]);}
+function saveFlowers(a){DB.set('flowers',a);}
+
+/* Curated, tappable learning matched to Danielle's goals (AI in L&D, instructional design, exec presence) */
+const CURATED_LEARN=[
+  {title:"① Prompt design — Anthropic interactive tutorial",type:'Course',url:'https://github.com/anthropics/prompt-eng-interactive-tutorial',minutes:30,effort:'high'},
+  {title:"① How LLMs actually work — Karpathy intro",type:'Lecture',url:'https://www.youtube.com/results?search_query=andrej+karpathy+intro+to+large+language+models',minutes:45,effort:'high'},
+  {title:"① Speak so people want to listen — Julian Treasure",type:'TED Talk',url:'https://www.ted.com/talks/julian_treasure_how_to_speak_so_that_people_want_to_listen',minutes:10,effort:'low'},
+  {title:"② Claude Code — go beyond chat (docs)",type:'Article',url:'https://docs.anthropic.com/en/docs/claude-code/overview',minutes:15,effort:'med'},
+  {title:"② Light SQL — Mode interactive tutorial",type:'Course',url:'https://mode.com/sql-tutorial/',minutes:30,effort:'high'},
+  {title:"② Databricks — self-serve your metrics",type:'Article',url:'https://www.databricks.com/learn',minutes:20,effort:'med'},
+  {title:"② AI-assisted instructional design",type:'Video',url:'https://www.youtube.com/results?search_query=AI+assisted+instructional+design',minutes:20,effort:'med'},
+  {title:"③ Change management — Prosci ADKAR model",type:'Article',url:'https://www.prosci.com/methodology/adkar',minutes:10,effort:'low'},
+  {title:"③ Evaluating AI output — building evals",type:'Video',url:'https://www.youtube.com/results?search_query=how+to+build+evals+for+LLM+outputs',minutes:20,effort:'med'},
+  {title:"③ Responsible/governed AI — NIST AI RMF",type:'PDF',url:'https://www.nist.gov/itl/ai-risk-management-framework',minutes:20,effort:'high'},
+  {title:"AI at work — Ethan Mollick, One Useful Thing",type:'Essay',url:'https://www.oneusefulthing.org/',minutes:10,effort:'low'},
+  {title:"WorkLife with Adam Grant — org psychology",type:'Podcast',url:'https://open.spotify.com/search/WorkLife%20with%20Adam%20Grant',minutes:30,effort:'low'}
+];
+/* ============ SEED (shared with old Life app — never wipes existing data) ============ */
+if(!DB.get('lm_starter_v3',false)){
+  DB.set('lm_people',[
+    {id:uid(),name:'Dina — date night',cadence:7,last:offset(-5),bday:'',note:'Plan a date night this week 💛',effort:'med',domain:'social'},
+    {id:uid(),name:'Uncle Jack',cadence:7,last:offset(-8),bday:'',note:'Call on the drive home — built-in excuse to hang up.',effort:'med',domain:'social'},
+    {id:uid(),name:'Mom',cadence:2,last:offset(-2),bday:'',note:'Call — aim for 3x a week.',effort:'med',domain:'social'},
+    {id:uid(),name:'Brother',cadence:7,last:offset(-6),bday:'',note:'FaceTime or a call.',effort:'med',domain:'social'},
+    {id:uid(),name:'Amanda',cadence:3,last:offset(-4),bday:'',note:'Text to check in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Liv',cadence:3,last:offset(-3),bday:'',note:'Text to check in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Ashley',cadence:3,last:offset(-5),bday:'',note:'Text to check in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Connie',cadence:3,last:offset(-2),bday:'',note:'Text to check in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Rachel',cadence:3,last:offset(-4),bday:'',note:'Text to check in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Dita',cadence:3,last:offset(-3),bday:'',note:'Text to check in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Kate (cousin)',cadence:7,last:offset(-6),bday:'',note:'Text your cousin.',effort:'low',domain:'social'},
+    {id:uid(),name:'Teresa (cousin)',cadence:7,last:offset(-7),bday:'',note:'Text your cousin.',effort:'low',domain:'social'},
+    {id:uid(),name:'Johnny Phelps',cadence:30,last:offset(-24),bday:'',note:'Monthly check-in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Kaylen',cadence:30,last:offset(-26),bday:'',note:'Monthly check-in.',effort:'low',domain:'social'},
+    {id:uid(),name:'Drew',cadence:30,last:offset(-22),bday:'',note:'Monthly check-in.',effort:'low',domain:'social'}]);
+  DB.set('lm_rhythms',[
+    {id:uid(),name:'Haircut',cadence:42,last:offset(-30),effort:'high',domain:'physical',note:'Book ~2 weeks ahead — her calendar fills up.'},
+    {id:uid(),name:'Manicure',cadence:32,last:offset(-27),effort:'med',domain:'physical'},
+    {id:uid(),name:'Pedicure',cadence:35,last:offset(0),effort:'med',domain:'physical'},
+    {id:uid(),name:'Massage with Diane',cadence:42,last:offset(-24),effort:'med',domain:'physical',note:'Every 4–8 weeks.'},
+    {id:uid(),name:'Met Market run — stock the fridge',cadence:7,last:offset(-6),effort:'med',domain:'physical',note:'Prepared meals + nutritious snacks.'},
+    {id:uid(),name:'Litter box',cadence:14,last:offset(-12),effort:'med',domain:'home'},
+    {id:uid(),name:"Wash & refill Eleanor's water dish",cadence:7,last:offset(-6),effort:'low',domain:'home'},
+    {id:uid(),name:'One screen-free night',cadence:7,last:offset(-6),effort:'low',domain:'emotional',note:'No TV, reading, or crafts — just rest or presence.'},
+    {id:uid(),name:'Monthly money check-in',cadence:30,last:offset(-25),effort:'low',domain:'financial',note:'Glance at spending + balances.'},
+    {id:uid(),name:'Pay bills / review accounts',cadence:30,last:offset(-25),effort:'med',domain:'financial',note:'Rent, cards, subscriptions.'}]);
+  DB.set('lm_learn',CURATED_LEARN.map(c=>({id:uid(),title:c.title,type:c.type,url:c.url,minutes:c.minutes,status:'queued',domain:'professional',effort:c.effort,auto:true})));
+  DB.set('lm_starter_v3',true);
+}
+/* Migration: money check-in weekly→monthly, drop old movement rhythms if present */
+if(!DB.get('dtc_mig1',false)){
+  let rh=DB.get('lm_rhythms',[]);
+  const drop=['Rowing','Vibration plate','Stepper or stretch during a show','Bathroom — sink, toilet, shower','Kitchen — counters, fridge, dishes, trash','Laundry — wash & put away','Bedroom — dust & vacuum'];
+  rh=rh.filter(r=>!drop.includes(r.name));
+  rh.forEach(r=>{if(r.name==='Weekly money check-in'){r.name='Monthly money check-in';r.cadence=30;}});
+  DB.set('lm_rhythms',rh);DB.set('dtc_mig1',true);
+}
+/* Seed the read-only-ish Work strip (Danielle edits it herself) */
+if(!DB.get('dtc_work_seeded',false)){
+  DB.set('dtc_work',[
+    {id:uid(),text:'Rocket School course creation',done:false},
+    {id:uid(),text:'Agent landscape clean-up',done:false},
+    {id:uid(),text:'Recruit AI champions',done:false},
+    {id:uid(),text:'AI training metric tracking',done:false},
+    {id:uid(),text:'Blue Academy micro-content',done:false},
+    {id:uid(),text:'Standard work for buyers & managers',done:false},
+    {id:uid(),text:'Approve government procurement agent',done:false}]);
+  DB.set('dtc_work_seeded',true);
+}
+/* Rebuild the learning queue with the curated, energy-tagged set (keeps done + your own additions) */
+if(!DB.get('dtc_learn_v3',false)){
+  const auto=['AI Bridge','Executive Presence','NotebookLM','One Useful Thing','Learn Prompting','ATD','Devlin Peck','Amy Cuddy','Executive presence','AI in Learning','Instructional design','Julian Treasure','WorkLife with Adam Grant','Andrew Ng','①','②','③'];
+  let ln=DB.get('lm_learn',[]).filter(x=> x.status==='done' || !auto.some(a=>(x.title||'').includes(a)) );
+  CURATED_LEARN.forEach(c=>{if(!ln.some(x=>x.title===c.title))ln.push({id:uid(),title:c.title,type:c.type,url:c.url,minutes:c.minutes,status:'queued',domain:'professional',effort:c.effort,auto:true});});
+  DB.set('lm_learn',ln);DB.set('dtc_learn_v3',true);
+}
+
+/* ============ ENERGY MODES ============ */
+const MODES={
+  low:{label:'Low energy',emoji:'🌙',allow:['low'],cls:'e-low',hint:'quick, low-effort only',line:"Running on empty. One tiny thing, or just rest — both count."},
+  balanced:{label:'Balanced',emoji:'🌿',allow:['low','med'],cls:'e-balanced',hint:'a steady mix',line:"Steady. Here's something that fits without tipping you over."},
+  high:{label:'High energy',emoji:'☀️',allow:['low','med','high'],cls:'e-high',hint:'ready for the big stuff',line:"Good gas. Let's point it at something that moves the needle."},
+  hyperfocus:{label:'Hyperfocus',emoji:'🔥',allow:['high','med'],cls:'e-hyperfocus',hint:'deep work — with a body check',line:"Locked in. Ride it — but your body comes with you."}
+};
+const MICRO=[
+  {title:'Drink a full glass of water',step:'stand up, fill it',effort:'low'},
+  {title:'Unclench your jaw, drop your shoulders',step:'do it on the next exhale',effort:'low'},
+  {title:'Step outside for 60 seconds',step:'just to the door',effort:'low'},
+  {title:'Put one thing back where it belongs',step:'grab the closest thing',effort:'low'}];
+const QUOTES=["I am not afraid of storms, for I am learning how to sail my ship.","You may encounter many defeats, but you must not be defeated.","Care for yourself first. You cannot pour from an empty cup.","Rest is not a reward for finishing. It's part of the work.","Doing your best today is enough. It counts."];
+const JPROMPTS=["What took the most out of you today — and did you refill anything?","Who did you show up for today?","What's one thing your past self would be proud of?","Where did you spend energy you didn't have?","What are you carrying that isn't yours to carry?"];
+let SNOOZED=new Set();
+
+/* ============ NAV ============ */
+function go(tab){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+tab).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));document.querySelector('.content').scrollTop=0;
+  if(tab==='people')buildPeople();if(tab==='life'){renderChores();buildRhythms();}if(tab==='care'){buildCare();}if(tab==='learn'){buildWorkStrip();buildLearn();}}
+
+/* ============ SMALL HELPERS ============ */
+function escq(s){return(s||'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function val(id){return document.getElementById(id)?.value.trim()||'';}
+function val2(id){return document.getElementById(id)?.value||'';}
+function emptyState(em,t){return `<div class="empty"><div class="em">${em}</div><p>${escq(t)}</p></div>`;}
+function showModal(h){document.getElementById('modal').innerHTML=h;document.getElementById('modalBg').classList.add('open');}
+function closeModal(){stopBreath&&stopBreath();stopMic&&stopMic();stopPulse&&stopPulse();document.getElementById('modalBg').classList.remove('open');}
+function copyText(t){navigator.clipboard?.writeText(t).then(()=>toast('Copied ✓'),()=>toast('Copy failed'));}
+function toast(m){const d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:#7A4A58;color:#FBE7EB;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:700;z-index:300;box-shadow:0 6px 18px rgba(80,40,55,.35)';document.body.appendChild(d);setTimeout(()=>d.remove(),1600);}
+function cadenceLabel(c){return{1:'day',2:'2 days',7:'week',14:'2 weeks',30:'month',32:'month',35:'month',42:'6 weeks',90:'3 months',365:'year'}[c]||c+' days';}
+function itemEffort(it){return it.effort||'med';}
+/* ============ NOW: energy + right-now pick ============ */
+function todayMode(){return DB.get('lm_energy',{})[todayISO()]||null;}
+function setMode(m){const e=DB.get('lm_energy',{});e[todayISO()]=m;DB.set('lm_energy',e);SNOOZED=new Set();buildNow();}
+function clearMode(){const e=DB.get('lm_energy',{});delete e[todayISO()];DB.set('lm_energy',e);buildNow();}
+function daysArrayEnergy(){const e=DB.get('lm_energy',{});return Object.keys(e).filter(d=>daysBetween(d)<=6&&daysBetween(d)>=0).map(d=>e[d]);}
+
+function candidates(){
+  let out=[];
+  DB.get('lm_people',[]).forEach(p=>{const d=daysBetween(p.last);if(p.cadence&&d!=null&&d>=p.cadence)
+    out.push({key:'p'+p.id,kind:'person',id:p.id,title:'Reach out to '+p.name,sub:d+' days · every '+cadenceLabel(p.cadence),step:p.note||'just text — keep it short',effort:itemEffort(p),over:d-p.cadence});});
+  DB.get('lm_rhythms',[]).forEach(r=>{const d=daysBetween(r.last);if(r.cadence&&d!=null&&d>=r.cadence)
+    out.push({key:'r'+r.id,kind:'rhythm',id:r.id,title:r.name,sub:'due · every '+cadenceLabel(r.cadence),step:r.note||'start small — just the first move',effort:itemEffort(r),over:d-r.cadence});});
+  return out;
+}
+function pickNow(mode){
+  const allow=MODES[mode].allow;
+  let c=candidates().filter(x=>allow.includes(x.effort)&&!SNOOZED.has(x.key));
+  c.sort((a,b)=>b.over-a.over);
+  if(c.length)return c[0];
+  if(mode==='low'||mode==='balanced'){const m=MICRO[new Date().getMinutes()%MICRO.length];return{key:'micro',kind:'micro',title:m.title,sub:'a gentle win',step:m.step,effort:'low'};}
+  return null;
+}
+function buildNow(){
+  const body=document.getElementById('nowBody');
+  const mode=todayMode();
+  if(!mode){
+    body.innerHTML=`<div class="ask">How much gas do you have today?</div>
+      <div class="energy">
+        ${Object.keys(MODES).map(k=>`<button class="echip" onclick="setMode('${k}')"><span class="ee">${MODES[k].emoji}</span><span><span class="et">${MODES[k].label}</span><span class="es">${escq(MODES[k].hint)}</span></span></button>`).join('')}
+      </div>
+      <div class="voice" style="margin-top:14px">Pick honestly, not hopefully. I'll match the day to it — change it anytime.</div>`;
+    updateMascot();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();return;
+  }
+  const M=MODES[mode];
+  const all=candidates().filter(x=>!SNOOZED.has(x.key));
+  const fit=all.filter(x=>M.allow.includes(x.effort));
+  const hidden=all.length-fit.length;
+  const pick=pickNow(mode);
+  const days=daysArrayEnergy();
+  let guard='';
+  if(mode==='hyperfocus'){guard=`<div class="guard"><div class="gt">🔥 Burnout guard</div><div class="gb">Hyperfocus borrows energy from tomorrow. Water within reach, a real snack, stand up soon. Stop when you need to.</div><span class="glink" onclick="openReset()">60-second reset →</span></div>`;}
+  else{const low7=days.filter(m=>m==='low').length;if(low7>=4)guard=`<div class="guard"><div class="gt">🌙 Gentle heads up</div><div class="gb">You've run on empty most of this week. That's a rest signal, not a failure. Lower the bar.</div></div>`;}
+  let inner;
+  if(pick){
+    inner=`<div class="now-kick">Right now · ${pick.effort} effort</div>
+      <div class="now-title">${escq(pick.title)}</div><div class="now-sub">${escq(pick.sub||'')}</div>
+      <div class="now-step">🫱 <b>Start:</b> ${escq(pick.step)}</div>
+      <div class="now-btns">
+        <button class="btn btn-primary" onclick="didNow('${pick.kind}','${pick.id||''}','${pick.key}')">Did it ✓</button>
+        <button class="btn btn-soft" onclick="snooze('${pick.key}')">Not now</button>
+      </div>${mode==='low'?`<div class="reassure">Everything hard can wait. This is enough.</div>`:''}`;
+  }else{
+    inner=`<div class="now-kick">Right now</div><div class="now-title">You're clear.</div>
+      <div class="now-sub">Nothing that fits your energy is waiting. ${mode==='high'||mode==='hyperfocus'?'Pick something that matters — or bank the rest.':'Rest counts as done.'}</div>
+      <div class="now-btns"><button class="btn btn-soft" style="flex:1" onclick="openReset()">🌬️ Reset instead</button></div>`;
+  }
+  let hline='';
+  if(pick&&pick.kind!=='micro'){const more=fit.length-1;const bits=[];if(more>0)bits.push(more+' more fit today');if(hidden>0)bits.push(hidden+' hidden — too big for '+M.label.toLowerCase());if(bits.length)hline=`<div class="hiddenline">${bits.join(' · ')}</div>`;}
+  else if(hidden>0){hline=`<div class="hiddenline">${hidden} thing${hidden>1?'s':''} waiting, but too big for ${M.label.toLowerCase()} — that's okay</div>`;}
+  body.innerHTML=`<div class="modeline"><span>${M.emoji} ${M.label}</span><span class="swap" onclick="clearMode()">change</span></div>
+    <div class="voice">${escq(M.line)}</div>${guard}
+    <div class="nowcard ${M.cls}">${inner}</div>${hline}`;
+  updateMascot();buildMusts();buildStreak();buildEveningNudge();buildHoardStrip();
+}
+/* hoard strip — mirrors financial.html's ledger. Reads only; the vault owns the writes. */
+const HOARD_TIERS=[[1000,'🪙'],[5000,'🥚'],[10000,'🔑'],[25000,'🐉'],[50000,'🎩'],[100000,'🏛️']];
+function hoardTotalLite(){const h=DB.get('fin_hoard',[]);return (Array.isArray(h)?h:[]).reduce((s,x)=>s+(+x.a||0),0);}
+function buildHoardStrip(){
+  const el=document.getElementById('hoardStrip');if(!el)return;
+  const tot=hoardTotalLite();
+  const earned=HOARD_TIERS.filter(t=>tot>=t[0]).map(t=>t[1]).join('');
+  el.innerHTML=`<span class="hs-c">🪙</span><span><span class="hs-v">${tot>0?'$'+Math.round(tot).toLocaleString():'Start your pile'}</span>`
+    +`<span class="hs-l">Your hoard${tot>0?' · only grows':''}</span></span>`
+    +`<span class="hs-t">${earned}</span><span class="hs-go">→</span>`;
+}
+
+/* ============ BACKUP ============
+   localStorage is the only copy of everything. Export exists so it isn't. */
+function exportAll(){
+  const out={_app:'DTC',_exported:new Date().toISOString(),data:{}};
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);out.data[k]=localStorage.getItem(k);}
+  const url=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');
+  a.href=url;a.download='dtc-backup-'+todayISO()+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  say('Backed up. Put that file somewhere that isn\'t your phone. 💾');
+}
+function importAll(input){
+  const f=input.files&&input.files[0];input.value='';if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    let d;
+    try{const p=JSON.parse(r.result);d=p&&p.data;}catch(e){d=null;}
+    if(!d||typeof d!=='object'){alert('That file doesn\'t look like a DTC backup.');return;}
+    const keys=Object.keys(d);
+    if(!keys.length){alert('That backup is empty.');return;}
+    if(!confirm('Restore '+keys.length+' saved items?\n\nThis replaces what\'s in the app right now.'))return;
+    keys.forEach(k=>{if(typeof d[k]==='string')localStorage.setItem(k,d[k]);});
+    location.reload();
+  };
+  r.readAsText(f);
+}
+
+function buildEveningNudge(){const el=document.getElementById('eveningNudge');if(!el)return;const h=new Date().getHours();const day=getDay();const done=day.energy&&day.head&&day.gut;
+  el.innerHTML=(h>=20&&!done)?`<div class="guard" style="cursor:pointer" onclick="go('care')"><div class="gt">🌙 Evening check-in</div><div class="gb">How did your body feel today? 10 seconds, and it helps spot patterns. Tap to open.</div></div>`:'';}
+function snooze(key){SNOOZED.add(key);buildNow();}
+function didNow(kind,id,key){
+  if(kind==='person'){const a=DB.get('lm_people',[]);const p=a.find(x=>x.id===id);if(p){p.last=todayISO();DB.set('lm_people',a);logEvent('person',p.name);addXP('social',1);}}
+  else if(kind==='rhythm'){const a=DB.get('lm_rhythms',[]);const r=a.find(x=>x.id===id);if(r){r.last=todayISO();DB.set('lm_rhythms',a);logEvent('rhythm',r.name);addXP((r.domain==='physical'||r.domain==='emotional')?'body':'home',1);}}
+  else{logEvent('micro',key);addXP('body',1);}
+  SNOOZED.add(key);toast('Nice. ✓');buildNow();
+}
+function logEvent(type,label){const l=DB.get('lm_log',[]);l.push({date:todayISO(),type,label});DB.set('lm_log',l);}
+
+/* ============ MASCOT (the princess) ============ */
+const MASCOT={sleepy:{badge:'🌙',speech:['Just meds today is a full win.','Rest is doing something. I mean it.','One tiny thing, or nothing. Both okay.']},
+  curious:{badge:'✨',speech:['Nice — one down. No pressure for more.','A start is the hard part. You did it.']},
+  happy:{badge:'💗',speech:['Two of three. Look at you.','The day is on your side now.']},
+  thriving:{badge:'🌟',speech:['All three. You took real care of yourself today. 💛','This is what a good day looks like.']},
+  celebrating:{badge:'👑',speech:['A whole diamond week. I am SO proud of you.','You showed up all week. That is huge.']}};
+function mascotState(){const day=getDay();const seeds=[day.meds,day.vibration,day.movement].filter(Boolean).length;
+  const dl=lastWeekDiamond();if(dl&&seeds>=2)return'celebrating';
+  return seeds===0?'sleepy':seeds===1?'curious':seeds===2?'happy':'thriving';}
+function lastWeekDiamond(){const dm=getDiamonds();if(!dm.length)return false;
+  const d=new Date();d.setDate(d.getDate()-7);const jan1=new Date(d.getFullYear(),0,1);const wk=Math.ceil((((d-jan1)/86400000)+jan1.getDay()+1)/7);
+  return dm.includes(`week_${d.getFullYear()}-W${String(wk).padStart(2,'0')}`);}
+function updateMascot(){const st=mascotState();const m=document.getElementById('mascot');if(!m)return;
+  m.className='mascot '+st+(st==='sleepy'?'':' breathe')+(st==='thriving'?' float':'')+(st==='celebrating'?' shimmy float':'');
+  const img=document.getElementById('mascotImg');if(img){const src='assets/princess_'+st+'.png';if(!(img.getAttribute('src')===src))img.setAttribute('src',src);}
+  document.getElementById('mascotBadge').textContent=MASCOT[st].badge;
+  const sp=document.getElementById('speech');if(sp&&!sp.dataset.locked){sp.textContent=MASCOT[st].speech[new Date().getDate()%MASCOT[st].speech.length];}
+  buildBloom();}
+function say(t){const sp=document.getElementById('speech');if(!sp)return;sp.textContent=t;sp.dataset.locked='1';setTimeout(()=>{sp.dataset.locked='';updateMascot();},3200);}
+
+/* daily bloom bar — fills with today's wins, resets each day, never shames */
+function bloomToday(){const d=getDay();let v=0;if(d.meds)v+=30;if(d.movement)v+=25;if(d.vibration)v+=20;if((d.water||0)>=1)v+=10;if(d.energy&&d.head&&d.gut)v+=15;return Math.min(100,v);}
+function buildBloom(){const el=document.getElementById('bloom');if(!el)return;const p=bloomToday();
+  el.innerHTML=`<span class="bloom-cap">💗</span><div class="bloom-track"><div class="bloom-fill" style="width:${p}%"></div></div><span class="bloom-pct">${p}%</span>`;}
+
+/* ============ MUSTS ============ */
+const SEEDS=[{k:'meds',i:'💊',l:'Meds &<br>Vitamin',n:'Meds'},{k:'vibration',i:'🌟',l:'Vibration<br>+ Red Light',n:'Vibration'},{k:'movement',i:'🎵',l:'Movement',n:'Movement'}];
+
+/* ============ GRADUATION ============
+   A habit you've actually built shouldn't still cost you a daily tap. Reliability is
+   read back out of the day_ history that already exists, so this works from day one. */
+const GRAD_WINDOW=14, GRAD_HITS=12;
+function reliability(k,win){
+  win=win||GRAD_WINDOW;
+  let hits=0;
+  for(let i=1;i<=win;i++){            // from yesterday back, so today can't vouch for itself
+    const raw=localStorage.getItem('day_'+offset(-i));
+    if(raw){try{if(JSON.parse(raw)[k])hits++;}catch(e){}}
+  }
+  return hits;
+}
+function gradOff(){return DB.get('lm_grad_off',{});}
+function isGraduated(k){
+  if(gradOff()[k]===todayISO())return false;   // she said it's off today
+  return reliability(k)>=GRAD_HITS;
+}
+function activeSeeds(){return SEEDS.filter(s=>!isGraduated(s.k));}
+/* graduated seeds credit themselves, which is what keeps them graduated */
+function autoCreditGraduated(){
+  const day=getDay();let changed=false;
+  SEEDS.forEach(s=>{if(isGraduated(s.k)&&!day[s.k]){day[s.k]=true;changed=true;}});
+  if(changed){creditShowedUp(day);saveDay(day);}
+}
+function ungraduate(k){
+  const o=gradOff();o[k]=todayISO();DB.set('lm_grad_off',o);
+  const day=getDay();day[k]=false;saveDay(day);
+  buildMusts();updateMascot();buildStreak();
+  say('Okay — back on the list for today. No harm done.');
+}
+
+function buildMusts(){
+  const day=getDay(), act=activeSeeds(), grad=SEEDS.filter(s=>isGraduated(s.k));
+  const m=document.getElementById('musts');
+  m.style.gridTemplateColumns='repeat('+Math.max(1,act.length)+',1fr)';
+  m.innerHTML=act.map(s=>`<button class="seed ${day[s.k]?'done':''}" onclick="tapSeed('${s.k}')"><div class="sc">✓</div><div class="si">${s.i}</div><div class="sl">${s.l}</div></button>`).join('')
+    || `<div class="autopilot" style="margin:0"><span class="ap-t">All of it runs itself now</span></div>`;
+  const ap=document.getElementById('autopilot');
+  if(ap){
+    ap.innerHTML=grad.length
+      ? `<div class="autopilot"><span class="ap-t">On autopilot</span>`
+        +grad.map(s=>`<span class="ap-chip" onclick="ungraduate('${s.k}')"><span class="ap-i">${s.i}</span> ${s.n} <b>✓</b></span>`).join('')
+        +`<span class="ap-off">tap one if it's off today</span></div>`
+      : '';
+  }
+  const jm=document.getElementById('justMedsLink');
+  if(jm)jm.style.display=isGraduated('meds')?'none':'';   // pointless once meds runs itself
+  buildQlog();}
+function tapSeed(k){const day=getDay();day[k]=!day[k];if(day[k]){creditShowedUp(day);}saveDay(day);checkDiamond();if(day[k]){awardReward();addXP('body',1);}
+  const st=mascotState();if(day[k]&&(k==='meds'||st!=='sleepy'))say(MASCOT[st].speech[0]);buildMusts();updateMascot();buildStreak();buildNow&&buildNowLight();}
+function buildNowLight(){/* refresh musts-dependent chrome without rebuilding energy UI */}
+function justMeds(){const day=getDay();if(!day.meds){day.meds=true;creditShowedUp(day);saveDay(day);checkDiamond();buildMusts();updateMascot();buildStreak();say('Just meds today is a full win. 💊');}}
+function creditShowedUp(day){if(!day.showed_up){day.showed_up=true;day.timestamp=new Date().toISOString();const f=getFlowers();if(!f.includes(todayISO())){f.push(todayISO());saveFlowers(f);}}}
+function checkDiamond(){const dm=getDiamonds();const wk=weekKey();if(dm.includes(wk))return;
+  let full=0;for(let i=0;i<7;i++){const raw=localStorage.getItem('day_'+offset(-i));if(raw){const d=JSON.parse(raw);if(d.meds&&d.vibration&&d.movement)full++;}}
+  if(full>=7){dm.push(wk);DB.set('diamonds',dm);addXP('growth',3);say('A whole diamond week! 💎');}}
+/* 28 dots, not a streak. A missed day renders one fewer dot — nothing resets to zero.
+   Every number shown here only ever climbs. */
+function buildStreak(){
+  const f=getFlowers(), dm=getDiamonds().length;
+  const el=document.getElementById('streakMini');if(!el)return;
+  el.style.cursor='pointer';el.onclick=openGarden;
+  let run=0;for(let i=0;i<400;i++){if(f.includes(offset(-i)))run++;else if(i>0)break;}
+  const best=Math.max(DB.get('lm_best_streak',0),run);DB.set('lm_best_streak',best);
+  if(!f.length){el.innerHTML='🌸 Your first flower is one tap away — do any one thing.<span class="sm-h">tap to see your garden 🌱</span>';return;}
+  let dots='';for(let i=27;i>=0;i--)dots+='<i'+(f.includes(offset(-i))?' class="on"':'')+'></i>';
+  el.innerHTML=`<div class="dotgrid">${dots}</div>`
+    +`<div class="sm-n">🌸 <b>${f.length}</b> flower${f.length===1?'':'s'}`
+    +`${dm?` · 💎 <b>${dm}</b>`:''}${best>=3?` · best run <b>${best}</b>`:''}</div>`
+    +`<span class="sm-h">your last 28 days · tap to see your garden 🌱</span>`;}
+/* ============ PEOPLE ============ */
+function buildPeople(){
+  const ppl=DB.get('lm_people',[]).slice().sort((a,b)=>{const oa=a.cadence?(daysBetween(a.last)??0)-a.cadence:-999,ob=b.cadence?(daysBetween(b.last)??0)-b.cadence:-999;return ob-oa;});
+  const el=document.getElementById('peopleList');
+  if(!ppl.length){el.innerHTML=emptyState('💬','No one here yet. Add the people you always mean to call but forget.');return;}
+  el.innerHTML=ppl.map(p=>{const d=daysBetween(p.last),over=p.cadence&&d!=null&&d>=p.cadence;
+    return `<div class="card ${over?'overdue':''}"><button class="icon-x" onclick="delItem('lm_people','${p.id}')">✕</button>
+      <div class="card-title">${escq(p.name)}<span class="effort ${itemEffort(p)}">${itemEffort(p)}</span></div>
+      <div class="card-sub">${p.cadence?'every '+cadenceLabel(p.cadence)+' · ':''}${d!=null?'you last logged '+d+'d ago':'no hello logged yet'}${p.bday?' · 🎂 '+p.bday:''}</div>
+      ${p.note?`<div class="card-nudge">${escq(p.note)}</div>`:''}
+      <div class="btn-row"><button class="btn btn-primary btn-sm" onclick="quickContact('${p.id}')">Talked today ✓</button><button class="btn btn-ghost btn-sm" onclick="alexaFor('person','${p.id}')">⏰ Alexa</button><button class="btn btn-ghost btn-sm" onclick="tickFor('person','${p.id}')">📲 TickTick</button></div></div>`;}).join('');
+}
+function quickContact(id){const a=DB.get('lm_people',[]);const p=a.find(x=>x.id===id);if(p){p.last=todayISO();DB.set('lm_people',a);logEvent('person',p.name);addXP('social',1);}toast('Logged ✓');buildPeople();}
+
+/* ============ RHYTHMS ============ */
+function sortR(rs){return rs.slice().sort((a,b)=>((daysBetween(b.last)??0)-(b.cadence||9999))-((daysBetween(a.last)??0)-(a.cadence||9999)));}
+function rhythmCardHtml(r){const d=daysBetween(r.last),due=r.cadence&&d!=null&&d>=r.cadence;
+  return `<div class="card ${due?'soon':''}"><button class="icon-x" onclick="delItem('lm_rhythms','${r.id}')">✕</button>
+    <div class="card-title">${escq(r.name)}<span class="effort ${itemEffort(r)}">${itemEffort(r)}</span> ${due?'<span class="pill due">Due</span>':'<span class="pill ok">Handled</span>'}</div>
+    <div class="card-sub">every ${cadenceLabel(r.cadence)} · last done ${d!=null?d+'d ago':'never'}</div>
+    ${r.note?`<div class="card-nudge">${escq(r.note)}</div>`:''}
+    <div class="btn-row"><button class="btn btn-primary btn-sm" onclick="quickRhythm('${r.id}')">Done ✓</button><button class="btn btn-ghost btn-sm" onclick="alexaFor('rhythm','${r.id}')">⏰ Alexa</button><button class="btn btn-ghost btn-sm" onclick="tickFor('rhythm','${r.id}')">📲 TickTick</button></div></div>`;}
+function buildRhythms(){const rs=sortR(DB.get('lm_rhythms',[]).filter(r=>r.domain!=='physical'&&r.domain!=='emotional'));const el=document.getElementById('rhythmList');if(!el)return;
+  el.innerHTML=rs.length?rs.map(rhythmCardHtml).join(''):emptyState('🔁','Nothing here. Add home or money upkeep — litter box, bills, accounts.');}
+function buildCareRhythms(){const el=document.getElementById('careRhythms');if(!el)return;const rs=sortR(DB.get('lm_rhythms',[]).filter(r=>r.domain==='physical'||r.domain==='emotional'));
+  el.innerHTML=rs.length?rs.map(rhythmCardHtml).join(''):emptyState('💅','Add haircut, nails, massage — the good upkeep.');}
+function quickRhythm(id){const a=DB.get('lm_rhythms',[]);const r=a.find(x=>x.id===id);if(r){r.last=todayISO();DB.set('lm_rhythms',a);logEvent('rhythm',r.name);addXP((r.domain==='physical'||r.domain==='emotional')?'body':'home',1);}toast('Done ✓');buildRhythms();buildCareRhythms();}
+
+/* ============ LEARN ============ */
+let learnEnergy=null,learnTime=null;
+function setLE(v){learnEnergy=(learnEnergy===v?null:v);buildLearn();}
+function setLT(v){learnTime=(learnTime===v?null:v);buildLearn();}
+function learnMatch(x){if(learnEnergy&&(x.effort||'med')!==learnEnergy)return false;
+  if(learnTime){const m=x.minutes||20;if(learnTime===30){if(m<30)return false;}else if(m>learnTime)return false;}return true;}
+function buildLearn(){
+  const q=DB.get('lm_learn',[]);const el=document.getElementById('learnList');
+  if(!q.length){el.innerHTML=emptyState('📖','Empty queue. Add an article, podcast, video, or PDF for your next gap.');return;}
+  const chip=(active,label,fn)=>`<button class="lchip${active?' on':''}" onclick="${fn}">${label}</button>`;
+  const bar=`<div class="lrow"><span class="lcap">Energy</span>${chip(!learnEnergy,'Any','setLE(null)')}${chip(learnEnergy==='low','🌙 Low',"setLE('low')")}${chip(learnEnergy==='med','🌿 Med',"setLE('med')")}${chip(learnEnergy==='high','☀️ High',"setLE('high')")}</div>
+    <div class="lrow"><span class="lcap">Time</span>${chip(!learnTime,'Any','setLT(null)')}${chip(learnTime===10,'≤10m','setLT(10)')}${chip(learnTime===20,'≤20m','setLT(20)')}${chip(learnTime===30,'30m+','setLT(30)')}</div>`;
+  const queued=q.filter(x=>x.status!=='done'),done=q.filter(x=>x.status==='done');
+  const ord={low:0,med:1,high:2};
+  const shown=queued.filter(learnMatch).sort((a,b)=>(ord[a.effort||'med']-ord[b.effort||'med'])||((a.minutes||20)-(b.minutes||20)));
+  const hidden=queued.length-shown.length;
+  const card=x=>`<div class="card" style="${x.status==='done'?'opacity:.55':''}"><button class="icon-x" onclick="delItem('lm_learn','${x.id}')">✕</button>
+    <div class="card-title">${escq(x.title)}<span class="effort ${x.effort||'med'}">${x.effort||'med'}</span></div>
+    <div class="card-sub">${escq(x.type||'link')}${x.minutes?' · ~'+x.minutes+' min':''}</div>
+    <div class="btn-row">${x.url?`<button class="btn btn-ochre btn-sm" onclick="window.open('${encodeURI(x.url)}','_blank')">Open →</button>`:''}
+      <button class="btn ${x.status==='done'?'btn-ghost':'btn-primary'} btn-sm" onclick="toggleLearn('${x.id}')">${x.status==='done'?'↩ Requeue':'Read/watched ✓'}</button></div></div>`;
+  el.innerHTML=bar+(shown.length?shown.map(card).join(''):`<div class="voice" style="margin:8px 2px">Nothing matches that combo — loosen a filter.</div>`)
+    +(hidden>0?`<div class="hiddenline">${hidden} more hidden by your filters</div>`:'')
+    +(done.length?`<div class="eyebrow" style="margin-top:18px">Done · ${done.length}</div>`+done.map(card).join(''):'');
+}
+function toggleLearn(id){const q=DB.get('lm_learn',[]);const x=q.find(i=>i.id===id);if(x){x.status=x.status==='done'?'queued':'done';if(x.status==='done'){logEvent('learn',x.title);addXP('mind',2);}DB.set('lm_learn',q);}buildLearn();}
+function surfaceLearn(){let q=DB.get('lm_learn',[]).filter(x=>x.status!=='done');if(!q.length){toast('Queue is empty — add something first.');return;}
+  const mode=todayMode();if(mode){const allow=MODES[mode].allow;const m=q.filter(x=>allow.includes(x.effort||'med'));if(m.length)q=m;}
+  q.sort((a,b)=>(a.minutes||30)-(b.minutes||30));const p=q[0];
+  showModal(`<h3>Start here</h3><div class="mdesc">${mode?'Matched to your energy today, shortest first.':'Shortest thing in the queue.'} Just this one.</div>
+    <div class="card" style="margin:0 0 4px"><div class="card-title">${escq(p.title)}</div><div class="card-sub">${escq(p.type||'link')}${p.minutes?' · ~'+p.minutes+' min':''}</div></div>
+    <div class="btn-row">${p.url?`<button class="btn btn-ochre" onclick="window.open('${encodeURI(p.url)}','_blank')">Open →</button>`:''}<button class="btn btn-primary" onclick="toggleLearn('${p.id}');closeModal()">Done ✓</button><button class="btn btn-soft" onclick="closeModal()">Later</button></div>`);}
+
+/* ============ FORMS + write-in adaptivity ============ */
+function delItem(k,id){DB.set(k,DB.get(k,[]).filter(x=>x.id!==id));if(k==='lm_people')buildPeople();else if(k==='lm_rhythms')buildRhythms();else buildLearn();}
+function effortField(){return `<div class="field"><label>Effort level</label><select id="f_eff"><option value="low">Low — 2-minute, do it on a bad day</option><option value="med" selected>Medium</option><option value="high">High — needs real energy</option></select></div>`;}
+function openPersonForm(prefill=''){showModal(`<h3>Add someone</h3><div class="mdesc">Set a rhythm and I'll nudge you when it's been too long.</div>
+  <div class="field"><label>Name</label><input id="f_name" value="${escq(prefill)}" placeholder="Uncle Jack"></div>
+  <div class="field"><label>How often?</label><select id="f_cad"><option value="7">Weekly</option><option value="14">Every 2 weeks</option><option value="30" selected>Monthly</option><option value="90">Every few months</option><option value="0">When I remember</option></select></div>
+  ${effortField()}
+  <div class="field"><label>Birthday (MM-DD, optional)</label><input id="f_bday" placeholder="03-14"></div>
+  <div class="field"><label>Note (optional)</label><input id="f_note" placeholder="Call on the drive home"></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" onclick="savePerson()">Add</button><button class="btn btn-soft" onclick="closeModal()">Cancel</button></div>`);}
+function savePerson(){const n=val('f_name');if(!n){toast('Give them a name.');return;}const a=DB.get('lm_people',[]);a.push({id:uid(),name:n,cadence:+val('f_cad'),last:offset(-999),bday:val('f_bday'),note:val('f_note'),effort:val('f_eff'),domain:'social'});DB.set('lm_people',a);clearFromDump();closeModal();go('people');}
+function openRhythmForm(prefill='',dom='home'){window._rdom=dom;showModal(`<h3>Add ${dom==='physical'?'self-care':'a rhythm'}</h3><div class="mdesc">Something recurring. I stay quiet until it's due.</div>
+  <div class="field"><label>What is it?</label><input id="f_name" value="${escq(prefill)}" placeholder="Haircut"></div>
+  <div class="field"><label>How often?</label><select id="f_cad"><option value="1">Daily</option><option value="7">Weekly</option><option value="14">Every 2 weeks</option><option value="30" selected>Monthly</option><option value="42">Every 6 weeks</option><option value="90">Quarterly</option></select></div>
+  ${effortField()}
+  <div class="field"><label>Last done</label><select id="f_last"><option value="0">Today</option><option value="-999" selected>A while ago / never</option></select></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" onclick="saveRhythm()">Add</button><button class="btn btn-soft" onclick="closeModal()">Cancel</button></div>`);}
+function saveRhythm(){const n=val('f_name');if(!n){toast('Name it.');return;}const dom=window._rdom||'home';const a=DB.get('lm_rhythms',[]);a.push({id:uid(),name:n,cadence:+val('f_cad'),last:offset(+val('f_last')),effort:val('f_eff'),domain:dom});DB.set('lm_rhythms',a);clearFromDump();closeModal();go(dom==='physical'||dom==='emotional'?'care':'life');}
+function openLearnForm(prefill=''){showModal(`<h3>Add to the queue</h3><div class="mdesc">No pressure to finish. It just waits for you.</div>
+  <div class="field"><label>Title</label><input id="f_name" value="${escq(prefill)}" placeholder="AI agents Substack post"></div>
+  <div class="field"><label>Type</label><select id="f_type"><option>Article</option><option>Substack</option><option>YouTube</option><option>Podcast</option><option>Course</option><option>Other</option></select></div>
+  <div class="field"><label>Link (optional)</label><input id="f_url" placeholder="https://"></div>
+  <div class="field"><label>Rough minutes</label><select id="f_min"><option value="5">5</option><option value="10">10</option><option value="20" selected>20</option><option value="45">45</option></select></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" onclick="saveLearn()">Add</button><button class="btn btn-soft" onclick="closeModal()">Cancel</button></div>`);}
+function saveLearn(){const n=val('f_name');if(!n){toast('Give it a title.');return;}const a=DB.get('lm_learn',[]);a.push({id:uid(),title:n,type:val('f_type'),url:val('f_url'),minutes:+val('f_min'),status:'queued',domain:'professional'});DB.set('lm_learn',a);clearFromDump();closeModal();go('learn');}
+
+/* write-in tally → auto-promote to a rhythm on 3rd time */
+function normalizeText(t){return (t||'').toLowerCase().trim().replace(/\s+/g,' ');}
+function recordWriteIn(text){const n=normalizeText(text);if(n.length<3)return;
+  const t=DB.get('lm_seen_writeins',{});t[n]=(t[n]||0)+1;DB.set('lm_seen_writeins',t);
+  if(t[n]===3){const already=DB.get('lm_rhythms',[]).some(r=>normalizeText(r.name)===n);
+    if(!already)setTimeout(()=>promptPromote(text),400);}}
+function promptPromote(text){showModal(`<h3>Noticing a pattern 👀</h3><div class="mdesc">You've written "<b>${escq(text)}</b>" a few times now. Want me to make it a recurring rhythm so it shows up on its own?</div>
+  <div class="field"><label>How often?</label><select id="f_pcad"><option value="7">Weekly</option><option value="14">Every 2 weeks</option><option value="30">Monthly</option></select></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" onclick="doPromote('${escq(text).replace(/'/g,"\\'")}')">Yes, add it</button><button class="btn btn-soft" onclick="closeModal()">No thanks</button></div>`);}
+function doPromote(text){const a=DB.get('lm_rhythms',[]);a.push({id:uid(),name:text,cadence:+val('f_pcad'),last:offset(0),effort:'med',domain:'home'});DB.set('lm_rhythms',a);
+  const t=DB.get('lm_seen_writeins',{});delete t[normalizeText(text)];DB.set('lm_seen_writeins',t);closeModal();toast('Added to Rhythms ✓');go('life');}
+
+/* ============ ALEXA + TICKTICK ============ */
+function itemNameFreq(kind,id){let name,every;if(kind==='person'){const p=DB.get('lm_people',[]).find(x=>x.id===id);name='reach out to '+p.name;every=p.cadence;}else{const r=DB.get('lm_rhythms',[]).find(x=>x.id===id);name=r.name.toLowerCase();every=r.cadence;}return{name,every};}
+function alexaFor(kind,id){const{name,every}=itemNameFreq(kind,id);
+  const freq=every===1?'every day':every===7?'every week':every===30?'every month':'every '+every+' days';const script=`"Alexa, remind me to ${name} ${freq}."`;
+  showModal(`<h3>Hand it to Alexa ⏰</h3><div class="mdesc">Say this once. Alexa nags so this app doesn't have to.</div><div class="script-box">${escq(script)}</div>
+    <button class="btn btn-primary btn-sm" onclick='copyText(${JSON.stringify(script)})'>Copy the phrase</button>
+    <div class="steps" style="margin-top:14px"><b>Or in the app:</b><br>Alexa app → <b>More</b> → <b>Reminders</b> → <b>+ Add</b> → recurs <b>${escq(freq)}</b> at a time you'll catch it.</div>
+    <div class="btn-row"><button class="btn btn-soft" style="width:100%" onclick="closeModal()">Done</button></div>`);}
+function tickFor(kind,id){const{name}=itemNameFreq(kind,id);const title=name.charAt(0).toUpperCase()+name.slice(1);
+  const web='https://ticktick.com/webapp/#q/all/tasks?title='+encodeURIComponent(title);
+  showModal(`<h3>Send to TickTick 📲</h3><div class="mdesc">Puts it on your phone with a time, so it lands in your face — not out of sight.</div>
+    <div class="card" style="margin:0 0 6px"><div class="card-title">${escq(title)}</div><div class="card-sub">pick a time when it opens</div></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="location.href='ticktick://x-callback-url/add?title='+encodeURIComponent(${JSON.stringify(title)})">Open TickTick app</button>
+    <button class="btn btn-ochre" onclick="window.open('${web}','_blank')">Web</button></div>
+    <div class="steps" style="margin-top:12px">If the app doesn't open, use Web, or copy: </div>
+    <button class="btn btn-soft btn-sm" onclick='copyText(${JSON.stringify(title)})'>Copy title</button>
+    <div class="btn-row"><button class="btn btn-soft" style="width:100%" onclick="closeModal()">Done</button></div>`);}
+/* ============ CHORES ============ */
+const CHORE_DEFS={
+  dishes:{label:'Dishes & kitchen wipe-down',subs:[{id:'dishwasher',text:'Dishwasher loaded/unloaded'},{id:'counters',text:'Counters wiped'},{id:'full',text:'Full kitchen clean'}]},
+  laundry_wash:{label:'Laundry — wash & dry',subs:[{id:'load',text:'One load washed'},{id:'dry',text:'Dried'},{id:'full',text:'All loads washed & dried'}]},
+  laundry_away:{label:'Laundry — put away & bedroom',subs:[{id:'fold',text:'Folded'},{id:'away',text:'Put away'},{id:'sheets',text:'Sheets changed'}]},
+  living_area:{label:'Main living & dining',subs:[{id:'pickup',text:'Quick tidy/pickup'},{id:'sweep',text:'Swept or vacuumed'},{id:'full',text:'Full living area clean'}]},
+  bathroom:{label:'Bathroom',subs:[{id:'toilet',text:'Toilet scrubbed'},{id:'sink',text:'Sink wiped'},{id:'full',text:'Full bathroom clean'}]}
+};
+const CHORE_KEYS=Object.keys(CHORE_DEFS);let expandedChore=null;
+function getChoreSub(wk,key){if(!wk.chore_sub)wk.chore_sub={};if(!wk.chore_sub[key])wk.chore_sub[key]={subtasks:[],notes:''};return wk.chore_sub[key];}
+function choreState(wk,key){const subDef=CHORE_DEFS[key].subs;const sub=wk.chore_sub&&wk.chore_sub[key]?wk.chore_sub[key]:{subtasks:[],notes:''};
+  const allChecked=subDef.every(s=>sub.subtasks.includes(s.id));if(wk[key]||allChecked)return'done';
+  if(sub.subtasks.length>0||(sub.notes&&sub.notes.trim()))return'partial';return'none';}
+function creditChoreShowedUp(){const day=getDay();creditShowedUp(day);saveDay(day);buildStreak();updateMascot();}
+function toggleChore(key){const wk=getWeek();wk[key]=!wk[key];saveWeek(wk);if(wk[key]){creditChoreShowedUp();awardReward();addXP('home',2);}renderChores();}
+function toggleChoreExpand(key){expandedChore=(expandedChore===key)?null:key;renderChores();}
+function toggleSub(key,subId){const wk=getWeek();const sub=getChoreSub(wk,key);const i=sub.subtasks.indexOf(subId);
+  if(i>=0)sub.subtasks.splice(i,1);else sub.subtasks.push(subId);saveWeek(wk);if(sub.subtasks.length)creditChoreShowedUp();
+  if(!wk._rewarded)wk._rewarded=[];if(choreState(wk,key)==='done'&&!wk._rewarded.includes(key)){wk._rewarded.push(key);saveWeek(wk);awardReward();addXP('home',2);}
+  renderChores();}
+function setChoreNote(key,value){const wk=getWeek();const sub=getChoreSub(wk,key);sub.notes=(value||'').trim();saveWeek(wk);
+  if(sub.notes){creditChoreShowedUp();recordWriteIn(sub.notes);}renderChores();}
+function renderChores(){const container=document.getElementById('choreBlocks');if(!container)return;const wk=getWeek();
+  container.innerHTML=CHORE_KEYS.map(key=>{const def=CHORE_DEFS[key];const state=choreState(wk,key);
+    const sub=wk.chore_sub&&wk.chore_sub[key]?wk.chore_sub[key]:{subtasks:[],notes:''};const isOpen=expandedChore===key;
+    const subsHtml=def.subs.map(s=>{const on=sub.subtasks.includes(s.id);
+      return `<div class="sub-item${on?' checked':''}" onclick="toggleSub('${key}','${s.id}')"><div class="sub-box"></div><span>${s.text}</span></div>`;}).join('');
+    return `<div class="chore-block state-${state}${isOpen?' open':''}">
+      <div class="chore-row"><div class="chore-check ${state}" onclick="toggleChore('${key}')"></div>
+        <div class="chore-name" onclick="toggleChoreExpand('${key}')">${def.label}</div><div class="chore-caret" onclick="toggleChoreExpand('${key}')">▾</div></div>
+      <div class="chore-subs">${subsHtml}
+        <input class="sub-writein" type="text" maxlength="60" placeholder="✏️ Write in what you actually did…" value="${(sub.notes||'').replace(/"/g,'&quot;')}" onkeydown="if(event.key==='Enter')setChoreNote('${key}',this.value)" onblur="setChoreNote('${key}',this.value)"></div>
+    </div>`;}).join('');
+}
+
+/* ============ CARE ============ */
+const ORD={low:0,med:1,high:2};
+/* ty = movement type · im = impact (how much it bounces) · eq = needs equipment
+   im:'high' is excluded by default and only appears if she opts in. */
+const VIDEOS=[
+  {cat:'Light Yoga'},
+  {i:'🧘',t:'10-Min Yoga for Beginners — Adriene',d:'Gentle, complete-beginner friendly',min:10,eff:'low',ty:'stretch',im:'none',u:'https://youtu.be/j7rKKpwdXNE'},
+  {i:'🌅',t:'10-Min Morning Yoga — Adriene',d:'Wake up + release tension',min:10,eff:'low',ty:'stretch',im:'none',u:'https://www.youtube.com/watch?v=klmBssEYkdU'},
+  {i:'🪷',t:'Yoga for Beginners, 20 min — Adriene',d:'Foundations, breath + form',min:20,eff:'med',ty:'stretch',im:'none',u:'https://www.youtube.com/watch?v=vNyJuQuuMC8'},
+  {i:'💗',t:'Yoga for Comfort & Nourishment — Adriene',d:'Therapeutic, neck/shoulders/spine',min:30,eff:'med',ty:'stretch',im:'none',u:'https://www.youtube.com/watch?v=41_j1bkP0sc'},
+  {cat:'Stretching / Posture'},
+  {i:'💆',t:'10-Min Yoga Quickie — Neck & Shoulders',d:'Desk-tension relief (Adriene)',min:10,eff:'low',ty:'stretch',im:'none',u:'https://youtu.be/X3-gKPNyrTA'},
+  {i:'🧎',t:'Neck & Shoulder Relief — floor or chair',d:'Under 20 min, do it anywhere (Adriene)',min:18,eff:'low',ty:'stretch',im:'none',u:'https://youtu.be/SedzswEwpPw'},
+  {i:'🙆',t:'5-Min Neck & Upper Back Stretch',d:'Quick desk reset — opens a search',min:5,eff:'low',ty:'stretch',im:'none',u:'https://www.youtube.com/results?search_query=5+minute+neck+upper+back+stretch+desk+worker'},
+  {cat:'Vibration Plate'},
+  {i:'🌟',t:'10-Min Beginner Vibration Plate Workout',d:'Follow-along, low impact (Sunny Health)',min:10,eff:'low',ty:'vib',im:'none',eq:1,u:'https://sunnyhealthfitness.com/blogs/workouts/10-minute-beginner-vibration-plate-workout'},
+  {i:'⚖️',t:'10-Min Vibration Plate — Balance & Focus',d:'Balance + core (Sunny Health)',min:10,eff:'med',ty:'vib',im:'none',eq:1,u:'https://sunnyhealthfitness.com/blogs/workouts/10-minute-vibration-plate-workout-improve-balance-focus'},
+  {i:'🌿',t:'Vibration Plate Stretches',d:'Loosen back, hips, hamstrings (Hypervibe)',min:10,eff:'low',ty:'vib',im:'none',eq:1,u:'https://www.hypervibe.com/us/blog/stretching-on-a-vibration-plate/'},
+  {i:'🔆',t:'Vibration Plate Exercises — beginner set',d:'PT-guided full body (LifetimeVibe)',min:15,eff:'med',ty:'vib',im:'none',eq:1,u:'https://lifetimevibe.com/vibration-plate-exercises'},
+  {cat:'Full Body'},
+  {i:'🌸',t:'20-Min Full Body — Small Space',d:'No equipment, no jumping, low impact',min:20,eff:'med',ty:'strength',im:'low',u:'https://www.youtube.com/watch?v=2Z9g-AZinUc'},
+  {i:'🤸',t:'20-Min Full Body HIIT — Standing',d:'No repeats, no equipment',min:20,eff:'high',ty:'strength',im:'high',u:'https://www.youtube.com/watch?v=HhdYlniTjvg'},
+  {i:'💃',t:'30-Min Dance HIIT — No Jumping',d:'Apartment friendly',min:30,eff:'high',ty:'strength',im:'high',u:'https://www.youtube.com/watch?v=rI_6l992GrA'},
+
+  /* ---- added 2026-09-05: every link verified live via YouTube oEmbed, none invented.
+     Titles are relabeled for clarity (several sources share identical titles).
+     Anything with fat-loss/calorie-burn framing was rejected on purpose. ---- */
+  {cat:'Somatic / nervous system'},
+  {i:'🌊',t:'5-Min Reset — shaking + neck rolls',d:'Lying on your back. Silent, zero impact (sheBREATH)',min:5,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=fnD48Kj9Q2k'},
+  {i:'🫂',t:'5-Min Reset — self-hug + rocking',d:'Seated and silent. Works at 10pm (sheBREATH)',min:5,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=XZGeFp1_rW0'},
+  {i:'🌬️',t:'5-Min Breath Reset — sigh + humming',d:'No movement at all, just breath (sheBREATH)',min:5,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=ROEoKS23xu8'},
+  {i:'👐',t:'5-Min Reset — chest tapping',d:'Good desk-break length (sheBREATH)',min:5,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=btsTuiRxZkc'},
+  {i:'🛏️',t:'5-Min Reset — spine + pillow grounding',d:'Grab a pillow, stay on the floor (sheBREATH)',min:5,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=BQDpVXRTDhA'},
+  {i:'🍃',t:'10-Min Somatic Release',d:'Trauma-informed and gentle (Elisha\'s Space)',min:10,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=xJar5Oj5xyo'},
+  {i:'✨',t:'10-Min Shake It Off',d:'The shaking one — keep it tiny, hands and feet count (Soulshine)',min:10,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=a0d_M9kI-Wc'},
+  {i:'🧍',t:'10-Min Standing Somatic Yoga',d:'No talking, small space (Mary Kolende)',min:10,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=q4u__liSb2E'},
+  {i:'🌄',t:'10-Min Morning Somatic Routine',d:'For when you\'re sharpest (Yoga With Tim)',min:10,eff:'low',ty:'somatic',im:'none',u:'https://www.youtube.com/watch?v=pbCE5BpWJc0'},
+
+  {cat:'Walk indoors (for the rain)'},
+  {i:'🎧',t:'20-Min Indoor Walk — NO TALKING',d:'Silent, so you play your own song over it (Improved Health)',min:20,eff:'low',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=SljeWuTl-aM'},
+  {i:'🚶',t:'10-Min Walk at Home',d:'No equipment, no jumping (Lucy Wyndham-Read)',min:10,eff:'low',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=FMXETbejt94'},
+  {i:'👟',t:'10-Min Cardio Walk — all standing',d:'Apartment friendly, no jumping (Lucy Wyndham-Read)',min:10,eff:'low',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=JjkYsOHHbVA'},
+  {i:'🌦️',t:'20-Min Walk at Home for Beginners',d:'Low impact, no equipment, all standing (Improved Health)',min:20,eff:'low',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=IA9yH2994vY'},
+  {i:'🛣️',t:'30-Min Walk — no squats, no floor',d:'Nothing to get down and up for (Improved Health)',min:30,eff:'med',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=eYUx64kGXHc'},
+  {i:'🎶',t:'25-Min Indoor Walking',d:'Body-neutral channel, no jumping (Body Kind Fitness)',min:25,eff:'med',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=K5LvQBOGW3U'},
+  {i:'🌤️',t:'30-Min Low Impact Walking',d:'Music-led, small space (growwithjo)',min:30,eff:'med',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=yV4jyj8Hr1g'},
+  {i:'⚡',t:'30-Min Power Walk at Home',d:'If you can walk in place, you can do all of it (PS Fit)',min:30,eff:'med',ty:'walk',im:'low',u:'https://www.youtube.com/watch?v=-Kx-_QaEXto'},
+
+  {cat:'Desk breaks (do these at work)'},
+  {i:'🪑',t:'10-Min Seated Stretch Break',d:'Literally a desk break (Rebecca Whitrow)',min:10,eff:'low',ty:'stretch',im:'none',u:'https://www.youtube.com/watch?v=movYCGRNu2c'},
+  {i:'😮‍💨',t:'10-Min Seated Stretch — unwind',d:'Doubles as a nervous-system downshift (Sarah Starr)',min:10,eff:'low',ty:'stretch',im:'none',u:'https://www.youtube.com/watch?v=FF5HQZcX2xs'},
+  {i:'🔄',t:'10-Min Seated Reset',d:'Pairs with the somatic stuff (Yoga with Katie)',min:10,eff:'low',ty:'stretch',im:'none',u:'https://www.youtube.com/watch?v=auv0DrtKCjw'},
+  {i:'🧘‍♀️',t:'11-Min Floor Mobility Flow',d:'Hips, posture, core — a movement break, not a workout (FitnessBlender)',min:11,eff:'low',ty:'stretch',im:'none',u:'https://www.youtube.com/watch?v=3mWkNTLjIG4'},
+
+  {cat:'Strength — nothing bouncy'},
+  {i:'🦶',t:'20-Min Standing — no jumping',d:'All standing, beginner (HASfit)',min:20,eff:'med',ty:'strength',im:'low',u:'https://www.youtube.com/watch?v=4KggZkh7i1s'},
+  {i:'💪',t:'20-Min Full Body — no jumping, no weights',d:'Bodyweight strength (growingannanas)',min:20,eff:'med',ty:'strength',im:'low',u:'https://www.youtube.com/watch?v=K0OdP_BEGVU'},
+  {i:'🦵',t:'20-Min — no squats, no lunges, no jumping',d:'Knee friendly, for low-capacity days (growingannanas)',min:20,eff:'low',ty:'strength',im:'low',u:'https://www.youtube.com/watch?v=GrWJStYFt7c'},
+  {i:'🏠',t:'20-Min Low Impact Full Body',d:'Apartment friendly — kind to the downstairs neighbours (MadFit)',min:20,eff:'med',ty:'strength',im:'low',u:'https://www.youtube.com/watch?v=JkVHrA5o23o'},
+  {i:'🔁',t:'20-Min All Standing — no repeats',d:'Zero floor exercises (fitbymik)',min:20,eff:'med',ty:'strength',im:'low',u:'https://www.youtube.com/watch?v=WjH-NQDeQ3o'},
+
+  {cat:'More vibration plate'},
+  {i:'🌟',t:'10-Min Vibration Plate — beginner on-ramp',d:'Made by Sunny themselves, neutral framing',min:10,eff:'low',ty:'vib',im:'none',eq:1,u:'https://www.youtube.com/watch?v=UbZCKrnN_xM'},
+  {i:'🧍‍♀️',t:'10-Min Vibration Plate — standing only',d:'No floor work at all (Naomi Fitness)',min:10,eff:'low',ty:'vib',im:'none',eq:1,u:'https://www.youtube.com/watch?v=HGDxpEB_-qI'},
+  {i:'🔆',t:'10-Min Full Body Vibration Plate',d:'A step up once the basics get boring (Physique Anywhere)',min:10,eff:'med',ty:'vib',im:'none',eq:1,u:'https://www.youtube.com/watch?v=ZMlJW8vLJkc'}];
+const MOVE_TYPES=[
+  {k:'walk',    i:'🚶', l:'Walk'},
+  {k:'stretch', i:'🧘', l:'Stretch'},
+  {k:'somatic', i:'🌊', l:'Somatic'},
+  {k:'strength',i:'💪', l:'Strength'},
+  {k:'vib',     i:'🌟', l:'Vibration'}
+];
+const NOTICE=[
+  'Notice what\'s blooming. Count how many kinds you pass.',
+  'Count how many different birds you can hear.',
+  'Find three things the color of your front door.',
+  'Look up. Notice the shape of the trees against the sky.',
+  'Find the best-looking front porch on the block.',
+  'Spot five things you\'ve never noticed on this street.',
+  'Pick a smell and follow it — cut grass, rain, someone\'s dinner.',
+  'Count the cats. Any cat counts.',
+  'Find one thing that\'s changed since last week.',
+  'Notice the temperature on your face and on your hands.',
+  'Find the oldest tree you can.',
+  'Look for a window with a really good lamp in it.'
+];
+const SOUNDS=[
+  {e:'🎧',t:'Classical Trap',d:'Orchestral beats — focus with attitude',u:'https://www.youtube.com/watch?v=vqR6oLnSgaM&list=RDvqR6oLnSgaM&start_radio=1'},
+  {e:'🧠',t:'8D / Bilateral',d:'Moves side to side — calms the nervous system',u:'https://www.youtube.com/watch?v=Fyk2i8xNVow&list=PLBc3bYADDiFSC8LYMx0LMxHl_pkhDySU_'},
+  {e:'🎻',t:'Vitamin String Quartet',d:'Covers for strings — grounding',u:'https://www.youtube.com/watch?v=Y0dUodwIUYY&list=PLTThlpA3SWS8cSpHlAiuVt1m921oy_cHm'},
+  {e:'🎵',t:'Loving On Me — Jack Harlow',d:'For when you need to feel yourself',u:'https://open.spotify.com/search/Loving%20On%20Me%20Jack%20Harlow'},
+  {e:'⚡',t:'Black Betty — Vahtang Beatbox',d:'Pure energy',u:'https://open.spotify.com/search/Black%20Betty%20Vahtang%20Beatbox'}];
+let moveEnergy=null,moveTime=null,moveType='walk',moveBounce=false,moveBrowse=false,walkSeed=null,pickSeed=0;
+function setME(v){moveEnergy=(moveEnergy===v?null:v);buildCare();}
+function setMT(v){moveTime=(moveTime===v?null:v);buildCare();}
+function setMType(v){moveType=v;pickSeed=0;buildCare();}
+function toggleBounce(){moveBounce=!moveBounce;buildCare();}
+function toggleBrowse(){moveBrowse=!moveBrowse;buildCare();}
+function moveMatch(x){if(moveEnergy&&(x.eff||'med')!==moveEnergy)return false;if(moveTime){const m=x.min||20;if(moveTime===30){if(m<30)return false;}else if(m>moveTime)return false;}return true;}
+
+/* ===== THE WALK =====
+   Entry cost: shoes. No timer, no distance, no step count — the point is attention. */
+function walkPick(){
+  const t=new Date();
+  const s=walkSeed===null?(t.getDate()+t.getMonth()*31):walkSeed;
+  return {n:NOTICE[s%NOTICE.length],s:SOUNDS[s%SOUNDS.length]};
+}
+function reshuffleWalk(){walkSeed=(walkSeed===null?0:walkSeed)+1;buildCare();}
+function didWalk(){markMovement();buildCare();say('A walk counts every bit as much as the rest. 🌿');}
+function walkCardHtml(){
+  const w=walkPick(), done=getDay().movement;
+  return `<div class="walkcard">
+    <div class="wk-h">🚶 Take a walk</div>
+    <div class="wk-s">Shoes. That's the whole setup.</div>
+    <div class="wk-line"><span class="wk-e">${w.s.e}</span><a class="wk-song" href="${w.s.u}" target="_blank" rel="noopener">${escq(w.s.t)} ↗</a></div>
+    <div class="wk-n"><b>While you're out:</b> ${escq(w.n)}</div>
+    <div class="wk-btns">
+      <button class="btn ${done?'btn-soft':'btn-primary'}" onclick="didWalk()">${done?'Logged ✓':'Back — that counts ✓'}</button>
+      <button class="btn btn-soft" onclick="reshuffleWalk()">Something else</button>
+    </div></div>`;
+}
+
+/* ===== ONE PICK, NOT A LIBRARY =====
+   Mirrors pickNow(). High-impact is excluded unless she opts in. */
+function movePool(ty){
+  return VIDEOS.filter(v=>!v.cat).concat(userMoves())
+    .filter(v=>moveBounce||(v.im||'low')!=='high')
+    .filter(v=>!ty||(v.ty||'strength')===ty)
+    .filter(moveMatch)
+    .sort((a,b)=>(ORD[a.eff||'med']-ORD[b.eff||'med'])||((a.min||20)-(b.min||20)));
+}
+function pickMove(ty){const p=movePool(ty);return p.length?p[pickSeed%p.length]:null;}
+function nextPick(){pickSeed++;buildCare();}
+function onePickHtml(ty){
+  const pool=movePool(ty), v=pickMove(ty);
+  if(!v){
+    if(ty==='somatic')return `<div class="nopick"><b>Nothing saved here yet.</b><br>Somatic work — shaking, breathwork, nervous-system reset — isn't in the library. Add a link you like and it'll show up here.<div class="wk-btns" style="margin-top:10px"><button class="btn btn-soft" onclick="openMoveForm()">+ Add a somatic link</button></div></div>`;
+    return `<div class="nopick">Nothing matches that combination${moveBounce?'':' — and I\'m leaving out anything bouncy'}. Loosen the energy or time filter.</div>`;
+  }
+  return `<div class="onepick">${vcardHtml(v)}
+    <div class="op-f"><span>${pool.length>1?pool.length+' fit — this is the gentlest':'the only one that fits'}</span>${pool.length>1?`<span class="op-next" onclick="nextPick()">not this one →</span>`:''}</div></div>`;
+}
+
+/* ===== PERSONAL BESTS =====
+   Beat one and it says so. Fall short and it says nothing at all. */
+const PB_DEFS=[
+  {k:'pushups',i:'💪',l:'Push-ups',u:'reps'},
+  {k:'plank',  i:'🧱',l:'Plank hold',u:'sec'},
+  {k:'walkmin',i:'🚶',l:'Longest walk',u:'min'},
+  {k:'squats', i:'🦵',l:'Squats',u:'reps'}
+];
+function pbs(){return DB.get('lm_pb',{});}
+function buildPB(){
+  const el=document.getElementById('pbList');if(!el)return;const p=pbs();
+  el.innerHTML=PB_DEFS.map(d=>{
+    const b=p[d.k];
+    return `<div class="pbrow"><span class="pbi">${d.i}</span>
+      <span class="pbl">${d.l}<div class="pbb">${b?`best <b>${b.v}</b> ${d.u} · ${new Date(b.d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}`:'no record yet'}</div></span>
+      <input class="pbin" id="pb_${d.k}" type="number" inputmode="numeric" min="0" placeholder="${d.u}">
+      <button class="pbgo" onclick="savePB('${d.k}')">Log</button></div>`;
+  }).join('');
+}
+function savePB(k){
+  const inp=document.getElementById('pb_'+k), v=+inp.value;
+  if(!(v>0)){inp.focus();return;}
+  inp.value='';
+  const d=PB_DEFS.find(x=>x.k===k), p=pbs(), prev=p[k]?p[k].v:0;
+  if(v>prev){
+    p[k]={v:v,d:todayISO()};DB.set('lm_pb',p);
+    awardReward();addXP('body',1);buildPB();
+    say(prev?`New best — ${v} ${d.u}, up from ${prev}. 🏆`:`First record: ${v} ${d.u}. 🏆`);
+  }else{
+    buildPB();say('Logged. 🌿');   /* never compare downward */
+  }
+}
+
+/* Getting her own saves back OUT of the app — iOS makes file downloads awkward,
+   so clipboard first, selectable textarea as the fallback. */
+function copyMoves(){
+  const m=DB.get('lm_moves',[]);
+  if(!m.length){say('Nothing saved yet — add one first.');return;}
+  const txt='My '+m.length+' saved movement videos:\n\n'+m.map((x,i)=>
+    `${i+1}. ${x.t||'untitled'}${x.min?' ('+x.min+'m)':''}${x.eff?' ['+x.eff+' energy]':''}\n   ${x.u||'(no link)'}`).join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    /* two-arg then: only a clipboard rejection falls back, not an error thrown in the success path */
+    navigator.clipboard.writeText(txt).then(
+      ()=>say('Copied all '+m.length+'. Paste it anywhere. 📋'),
+      ()=>showMovesText(txt)
+    );
+  }else showMovesText(txt);
+}
+function showMovesText(t){
+  showModal(`<h3>Your saved videos</h3><div class="mdesc">Tap and hold inside the box → Select All → Copy.</div>`
+    +`<textarea readonly style="width:100%;height:210px;border:1.5px solid var(--line);border-radius:12px;padding:10px;font-family:monospace;font-size:11px;color:var(--espresso);background:var(--soft-white)">${escq(t)}</textarea>`
+    +`<div class="btn-row"><button class="btn btn-soft" style="width:100%" onclick="closeModal()">Done</button></div>`);
+}
+
+/* ===== TRIP COUNTDOWNS ===== quiet dates, no progress metric attached */
+function trips(){return DB.get('lm_trips',[{n:'🏝️ Tropical trip',d:'2026-12-15'},{n:'📦 Move in with Dina',d:'2027-03-01'},{n:'🏝️ Tropical trip',d:'2027-03-20'}]);}
+function buildTrips(){
+  const el=document.getElementById('tripRow');if(!el)return;
+  const t=trips().map((x,i)=>({...x,i:i,c:-daysBetween(x.d)})).filter(x=>x.c>=0).sort((a,b)=>a.c-b.c);
+  el.innerHTML=t.length?`<div class="triprow">`+t.map(x=>
+    `<span class="tripchip" onclick="editTrip(${x.i})">${escq(x.n)} <b>${x.c}d</b></span>`).join('')+`</div>`:'';
+}
+function editTrip(i){
+  const t=trips(), cur=t[i];if(!cur)return;
+  const d=prompt('Date for "'+cur.n.replace(/^\S+\s/,'')+'" (YYYY-MM-DD):',cur.d);
+  if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return;
+  t[i]={...cur,d:d};DB.set('lm_trips',t);buildTrips();
+}
+function vcardHtml(v){return `<a class="vcard" href="${v.u}" target="_blank" rel="noopener" onclick="markMovement()"><div class="vi">${v.i||'▶️'}</div><div style="flex:1"><div class="vt">${escq(v.t)}</div><div class="vd">${escq(v.d||'')}</div></div>${v.min?`<div class="vdur">~${v.min}m</div>`:''}${v._uid?`<span class="dx" style="color:var(--brown-mid);cursor:pointer;padding-left:8px" onclick="event.preventDefault();event.stopPropagation();delMove('${v._uid}')">✕</span>`:''}</a>`;}
+function userMoves(){return DB.get('lm_moves',[]).map(m=>({i:m.i||'▶️',t:m.t,d:m.d||'your save',min:m.min,eff:m.eff||'med',u:m.u,_uid:m.id}));}
+function buildCare(){
+  const chip=(a,l,f)=>`<button class="lchip${a?' on':''}" onclick="${f}">${l}</button>`;
+  const typeBar=`<div class="lrow"><span class="lcap">Type</span>`
+    +MOVE_TYPES.map(t=>chip(moveType===t.k,t.i+' '+t.l,`setMType('${t.k}')`)).join('')+`</div>`;
+  const energyBar=`<div class="lrow"><span class="lcap">Energy</span>${chip(!moveEnergy,'Any','setME(null)')}${chip(moveEnergy==='low','🌙 Low',"setME('low')")}${chip(moveEnergy==='med','🌿 Med',"setME('med')")}${chip(moveEnergy==='high','☀️ High',"setME('high')")}</div>
+    <div class="lrow"><span class="lcap">Time</span>${chip(!moveTime,'Any','setMT(null)')}${chip(moveTime===10,'≤10m','setMT(10)')}${chip(moveTime===20,'≤20m','setMT(20)')}${chip(moveTime===30,'30m+','setMT(30)')}</div>`;
+
+  const isWalk=moveType==='walk';
+  /* West Seattle in December: the outdoor walk needs an indoor twin, not a dead end */
+  const rain=isWalk&&movePool('walk').length
+    ? `<div class="rainline">🌧️ Pouring out? Walk indoors instead:</div>`+onePickHtml('walk')
+    : '';
+  const main=isWalk?walkCardHtml()+rain:energyBar+onePickHtml(moveType);
+  const bounce=isWalk?'':`<div class="bounceline" onclick="toggleBounce()">${moveBounce?'☑':'☐'} include the bouncy stuff</div>`;
+
+  const user=userMoves();
+  const lib=moveBrowse
+    ? `<div class="libwrap">`+VIDEOS.map(v=>v.cat?`<div class="cat">${v.cat}</div>`:vcardHtml(v)).join('')
+      +(user.length?`<div class="cat">Your saves</div>`+user.map(vcardHtml).join(''):'')+`</div>`
+    : '';
+  const browse=`<div class="browseline" onclick="toggleBrowse()">${moveBrowse?'▾ hide the full library':'▸ browse all '+(VIDEOS.filter(v=>!v.cat).length+user.length)+' saved'}</div>`;
+
+  document.getElementById('moveList').innerHTML=typeBar+main+bounce+browse+lib;
+  document.getElementById('soundList').innerHTML=SOUNDS.map(s=>`<a class="vcard" href="${s.u}" target="_blank" rel="noopener"><div class="vi">${s.e}</div><div style="flex:1"><div class="vt">${s.t}</div><div class="vd">${s.d}</div></div><div class="vdur">↗</div></a>`).join('');
+  buildTrips();buildPB();buildCareRhythms();buildEvening();
+}
+function markMovement(){const day=getDay();if(!day.movement){day.movement=true;creditShowedUp(day);saveDay(day);checkDiamond();addXP('body',1);buildMusts&&buildMusts();updateMascot&&updateMascot();buildStreak&&buildStreak();}}
+function openMoveForm(){showModal(`<h3>Add a video</h3><div class="mdesc">Paste a link from TikTok, YouTube, or Instagram. In the app: tap <b>Share → Copy Link</b>, then paste it here.</div>
+  <div class="field"><label>What is it?</label><input id="mv_t" placeholder="e.g. 5-min stretch I like"></div>
+  <div class="field"><label>Link</label><input id="mv_u" placeholder="https://..."></div>
+  <div class="field"><label>Rough minutes</label><select id="mv_min"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select></div>
+  <div class="field"><label>Energy it needs</label><select id="mv_eff"><option value="low">🌙 Low</option><option value="med" selected>🌿 Med</option><option value="high">☀️ High</option></select></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" onclick="saveMove()">Add</button><button class="btn btn-soft" onclick="closeModal()">Cancel</button></div>`);}
+function saveMove(){const t=val('mv_t'),u=val('mv_u');if(!t){toast('Give it a name.');return;}const a=DB.get('lm_moves',[]);a.push({id:uid(),t,u,min:+val('mv_min'),eff:val('mv_eff'),i:/tiktok/i.test(u)?'🎵':/instagram/i.test(u)?'📸':'▶️'});DB.set('lm_moves',a);closeModal();buildCare();toast('Saved ✓');}
+function delMove(id){DB.set('lm_moves',DB.get('lm_moves',[]).filter(x=>x.id!==id));buildCare();}
+const CHECKS={energy:[['good','🟢 Good'],['okay','🟡 Okay'],['rough','🔴 Rough']],head:[['migraine','🤕 Migraine'],['headache','😵 Headache'],['fine','✅ Fine']],gut:[['issues','🤢 Issues'],['meh','😬 Meh'],['fine','✅ Fine']]};
+function buildEvening(){const day=getDay();
+  document.getElementById('eveningCard').innerHTML=Object.keys(CHECKS).map(f=>`<div class="ec-row"><div class="ec-label">${f}</div>${CHECKS[f].map(([v,l])=>`<button class="ec-pill ${day[f]===v?'sel':''}" onclick="setCheckin('${f}','${v}')">${l}</button>`).join('')}</div>`).join('');}
+function setCheckin(field,value){const day=getDay();day[field]=day[field]===value?null:value;saveDay(day);buildEvening();}
+
+/* ============ WORK STRIP (editable by Danielle) ============ */
+function buildWorkStrip(){const w=DB.get('dtc_work',[]);const el=document.getElementById('workStrip');if(!el)return;
+  el.innerHTML=`<div class="wh">💼 On your plate at work</div>
+    ${w.length?w.map(x=>`<div class="wi"><div class="wd" style="${x.done?'background:var(--moss)':''}"></div><span style="flex:1;${x.done?'text-decoration:line-through;color:var(--brown-mid)':''}" onclick="toggleWork('${x.id}')">${escq(x.text)}</span><span class="dx" style="color:var(--brown-mid);cursor:pointer" onclick="delWork('${x.id}')">✕</span></div>`).join(''):'<div class="wnote">Nothing listed. Add your deliverables below.</div>'}
+    <div style="display:flex;gap:8px;margin-top:10px"><input id="workAdd" style="flex:1;border:1.5px solid var(--line);border-radius:11px;padding:9px 11px;font-family:Nunito;font-size:13px" placeholder="+ add a deliverable" onkeydown="if(event.key==='Enter')addWork()"><button class="btn btn-soft btn-sm" onclick="addWork()">Add</button></div>
+    <div class="wnote">Just a reminder of what's on your plate — the full tracker is Mission Control, at your desk 💻</div>`;
+}
+function toggleWork(id){const w=DB.get('dtc_work',[]);const x=w.find(i=>i.id===id);if(x)x.done=!x.done;DB.set('dtc_work',w);buildWorkStrip();}
+function delWork(id){DB.set('dtc_work',DB.get('dtc_work',[]).filter(x=>x.id!==id));buildWorkStrip();}
+function addWork(){const t=val('workAdd');if(!t)return;const w=DB.get('dtc_work',[]);w.push({id:uid(),text:t,done:false});DB.set('dtc_work',w);buildWorkStrip();}
+
+/* ============ RESET / BREATHING ============ */
+function openReset(){showModal(`<h3>Nervous system reset 🌬️</h3><div class="mdesc">Pick one. Sixty seconds is enough to tell your body it's safe.</div>
+  <div class="reset-opt" onclick="startBreath()"><span class="ro-e">🫧</span><div><div class="ro-t">Box breathing</div><div class="ro-s">Guided 4-4-4-4</div></div></div>
+  <div class="reset-opt" onclick="resetCard('Physiological sigh','Two short inhales through the nose (fill, then top up), then one long slow exhale through the mouth. Repeat 4 times. Fastest way to drop stress.')"><span class="ro-e">😮‍💨</span><div><div class="ro-t">Physiological sigh</div><div class="ro-s">Double inhale, long exhale · x4</div></div></div>
+  <div class="reset-opt" onclick="resetCard('5-4-3-2-1 grounding','Name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste. Brings you out of your head and into the room.')"><span class="ro-e">🖐️</span><div><div class="ro-t">5-4-3-2-1 grounding</div><div class="ro-s">Come back into the room</div></div></div>
+  <div class="reset-opt" onclick="resetCard('Unclench & drop','Soften your jaw. Drop your shoulders. Unstack your teeth. Let your tongue rest. Shake out your hands. You were bracing — you can stop.')"><span class="ro-e">🧎</span><div><div class="ro-t">Unclench &amp; drop</div><div class="ro-s">Release the tension</div></div></div>`);}
+function resetCard(t,b){showModal(`<h3>${escq(t)}</h3><div class="steps" style="font-size:14px;color:var(--espresso);line-height:1.7">${escq(b)}</div><div class="btn-row"><button class="btn btn-soft" onclick="openReset()">← Back</button><button class="btn btn-primary" onclick="closeModal()">Done</button></div>`);}
+function startBreath(){showModal(`<div class="breathe-wrap"><h3>Box breathing</h3><div class="breath-circle" id="bc"></div><div class="breath-phase" id="bp">Breathe in…</div><div class="breath-count" id="bcount">4 rounds left</div></div><div class="btn-row"><button class="btn btn-soft" onclick="stopBreath();openReset()">← Back</button><button class="btn btn-primary" onclick="stopBreath();closeModal()">Done</button></div>`);
+  const phases=[['Breathe in…',1.35],['Hold…',1.35],['Breathe out…',1.0],['Hold…',1.0]];let i=0,rounds=4;
+  const bc=document.getElementById('bc'),bp=document.getElementById('bp'),bcount=document.getElementById('bcount');
+  function tick(){if(!document.getElementById('bc')){stopBreath();return;}const[label,scale]=phases[i];bp.textContent=label;bc.style.transform='scale('+scale+')';i++;if(i>=phases.length){i=0;rounds--;bcount.textContent=rounds>0?rounds+' rounds left':'last breath — well done';}if(rounds<0){stopBreath();bp.textContent='Better?';bc.style.transform='scale(1)';return;}}
+  tick();window._breath=setInterval(tick,4000);}
+function stopBreath(){clearInterval(window._breath);}
+
+/* ============ BRAIN DUMP + VOICE ============ */
+function openDump(){const items=DB.get('lm_dump',[]);
+  showModal(`<h3>Brain dump 🧠</h3><div class="mdesc">Get it out of your head — type or 🎤 speak it. Sort it later, or never.</div>
+    <div class="field" style="display:flex;gap:8px"><input id="d_txt" style="flex:1" placeholder="what's rattling around?" onkeydown="if(event.key==='Enter')addDump()"><button class="btn btn-soft" id="micBtn" style="width:52px;font-size:18px" onclick="toggleMic()">🎤</button></div>
+    <div class="btn-row" style="margin-top:0"><button class="btn btn-primary" style="flex:1" onclick="addDump()">Drop it</button></div>
+    <div style="margin-top:16px">${items.length?items.map(d=>`<div class="dump-item"><span class="dtext">${escq(d.text)}</span><span class="dx" onclick="delDump('${d.id}')">✕</span><div class="triage"><span style="font-size:11px;color:var(--brown-mid);font-weight:700;align-self:center">turn into →</span><button onclick="convertDump('${d.id}','rhythm')">🔁 Rhythm</button><button onclick="convertDump('${d.id}','person')">💬 Person</button><button onclick="convertDump('${d.id}','learn')">📖 Learn</button><button onclick="convertDump('${d.id}','work')">💼 Work</button></div></div>`).join(''):'<div class="empty" style="padding:16px"><p>Nothing here — a clear head, or a good place to start.</p></div>'}</div>`);
+  setTimeout(()=>document.getElementById('d_txt')?.focus(),100);}
+function addDump(){const t=val('d_txt');if(!t)return;const a=DB.get('lm_dump',[]);a.unshift({id:uid(),text:t,ts:Date.now()});DB.set('lm_dump',a);openDump();}
+function delDump(id){DB.set('lm_dump',DB.get('lm_dump',[]).filter(x=>x.id!==id));openDump();}
+function convertDump(id,kind){const d=DB.get('lm_dump',[]).find(x=>x.id===id);if(!d)return;
+  if(kind==='work'){const w=DB.get('dtc_work',[]);w.push({id:uid(),text:d.text,done:false});DB.set('dtc_work',w);DB.set('lm_dump',DB.get('lm_dump',[]).filter(x=>x.id!==id));buildWorkStrip();toast('Added to Work ✓');openDump();return;}
+  window._fromDump=id;stopMic();closeModal();if(kind==='rhythm')openRhythmForm(d.text);else if(kind==='person')openPersonForm(d.text);else openLearnForm(d.text);}
+function clearFromDump(){if(window._fromDump){DB.set('lm_dump',DB.get('lm_dump',[]).filter(x=>x.id!==window._fromDump));window._fromDump=null;}}
+let _recog=null,_recognizing=false,_micInp='d_txt',_micBtn='micBtn';
+function toggleMic(inpId,btnId){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Voice input needs Chrome or Safari.');return;}
+  _micInp=inpId||'d_txt';_micBtn=btnId||'micBtn';
+  if(_recognizing){stopMic();return;}_recog=new SR();_recog.lang='en-US';_recog.interimResults=false;
+  _recog.onresult=e=>{const t=e.results[0][0].transcript;const inp=document.getElementById(_micInp);if(inp)inp.value=(inp.value?inp.value+' ':'')+t;};
+  _recog.onend=()=>{_recognizing=false;micUI(false);};_recog.onerror=()=>{_recognizing=false;micUI(false);};
+  try{_recog.start();_recognizing=true;micUI(true);}catch(e){_recognizing=false;}}
+function stopMic(){if(_recog){try{_recog.stop();}catch(e){}}_recognizing=false;micUI(false);}
+function micUI(on){const b=document.getElementById(_micBtn);if(!b)return;b.textContent=on?'⏹':'🎤';b.classList.toggle('rec',on);}
+
+/* ============ JOURNAL + PATTERNS ============ */
+function saveJournal(){const all=DB.get('lm_journal',{});all[todayISO()]={journal:val2('journalInput'),gratitude:val2('gratInput')};DB.set('lm_journal',all);const s=document.getElementById('journalSaved');s.classList.add('show');clearTimeout(window._jt);window._jt=setTimeout(()=>s.classList.remove('show'),1400);}
+function openPatterns(){
+  const log=DB.get('lm_log',[]).filter(e=>daysBetween(e.date)<=30);
+  const c=log.filter(e=>e.type==='person').length,r=log.filter(e=>e.type==='rhythm').length,l=log.filter(e=>e.type==='learn').length;
+  let flowers=0;for(let i=0;i<30;i++){if(getFlowers().includes(offset(-i)))flowers++;}
+  showModal(`<h3>Your last 30 days</h3><div class="mdesc">Not a scorecard. Just the shape of things.</div>
+    <div class="stat-grid">
+      <div class="stat rose"><div class="sv">${c}</div><div class="sl">people check-ins</div></div>
+      <div class="stat"><div class="sv">${r}</div><div class="sl">rhythms handled</div></div>
+      <div class="stat ochre"><div class="sv">${l}</div><div class="sl">things read / watched</div></div>
+      <div class="stat rust"><div class="sv">${flowers}</div><div class="sl">days you showed up</div></div>
+    </div>
+    <div class="voice" style="margin:14px 2px 4px">You showed up ${flowers} day${flowers===1?'':'s'} this month, and handled ${c+r} things for the people and life around you. More than it feels like.</div>
+    <div class="btn-row"><button class="btn btn-soft" style="width:100%" onclick="closeModal()">Close</button></div>`);}
+
+/* ============ VARIABLE REWARDS + GARDEN INVENTORY ============ */
+const DROPS={
+  common:[['🌿','Leaf'],['🫐','Berries'],['🍄','Glowing mushroom'],['🌸','Flower'],['🌹','Rose'],['📗','Little book'],['🌾','Wheat sprig']],
+  uncommon:[['🏮','Cozy lantern'],['🍵','Tea cup'],['🪴','Little planter'],['💎','Jewel'],['📚','Stack of tomes'],['🕯️','Candelabra']],
+  rare:[['👑','Crown'],['🪄','Magic wand'],['💍','Ring'],['🌈','Rainbow'],['⭐','Falling star']]
+};
+function makeDrop(tier){const pool=DROPS[tier];const[emoji,name]=pool[Math.floor(Math.random()*pool.length)];return{id:uid(),emoji,name,tier,ts:Date.now()};}
+function rollDrop(){const r=Math.random();return makeDrop(r<0.70?'common':r<0.90?'uncommon':'rare');}
+function awardReward(force){const it=force?makeDrop(force):rollDrop();const inv=DB.get('lm_inventory',[]);inv.push(it);DB.set('lm_inventory',inv);dropToast(it);return it;}
+function dropToast(it){const col={common:'#6E7F4A',uncommon:'#B5822A',rare:'#A5636F'}[it.tier];
+  const d=document.createElement('div');d.innerHTML=`<span style="font-size:21px">${it.emoji}</span><span>You found <b>${escq(it.name)}</b>${it.tier!=='common'?` · <span style="text-transform:uppercase;font-size:9px;letter-spacing:1px;color:${col}">${it.tier}</span>`:''}</span>`;
+  d.style.cssText=`position:fixed;bottom:118px;left:50%;transform:translateX(-50%);background:#FFFCFB;color:var(--espresso);border-left:4px solid ${col};padding:11px 15px;border-radius:14px;font-size:13px;font-weight:700;z-index:320;box-shadow:0 8px 22px rgba(80,40,55,.28);display:flex;align-items:center;gap:9px;max-width:310px`;
+  document.body.appendChild(d);setTimeout(()=>{d.style.transition='opacity .4s';d.style.opacity='0';},2000);setTimeout(()=>d.remove(),2500);}
+/* level-up stats — only ever grow (no guilt) */
+const STATS=[['body','Body','🌸'],['mind','Mind','📚'],['social','Social','💬'],['home','Home','🏡'],['growth','Growth','🌱']];
+function getXP(){return DB.get('lm_xp',{body:0,mind:0,social:0,home:0,growth:0});}
+function addXP(stat,n){const x=getXP();x[stat]=(x[stat]||0)+(n||1);DB.set('lm_xp',x);}
+function levelFor(xp){let lv=1,need=5,rem=xp||0;while(rem>=need){rem-=need;lv++;need=Math.round(need*1.6);}return{level:lv,pct:Math.round(rem/need*100)};}
+function openGarden(){const inv=DB.get('lm_inventory',[]);const f=getFlowers().length;const x=getXP();
+  const grid=arr=>arr.length?`<div class="inv-grid">${arr.map(i=>`<div class="inv-item t-${i.tier}"><div class="ie">${i.emoji}</div><div class="il">${escq(i.name)}</div></div>`).join('')}</div>`:`<div class="voice" style="margin:0 2px 8px;font-size:13px">None yet — they turn up as you show up.</div>`;
+  const r=inv.filter(i=>i.tier==='rare'),u=inv.filter(i=>i.tier==='uncommon'),c=inv.filter(i=>i.tier==='common');
+  const bars=STATS.map(([k,label,ico])=>{const L=levelFor(x[k]||0);return `<div class="statrow s-${k}"><div class="stat-ico">${ico}</div><div class="stat-main"><div class="stat-top"><span class="stat-name">${label}</span><span class="stat-lv">Lv ${L.level}</span></div><div class="stat-track"><div class="stat-fill" style="width:${L.pct}%"></div></div></div></div>`;}).join('');
+  showModal(`<h3>Royal profile 👑</h3><div class="mdesc">Everything you've grown by showing up. Your stats only ever climb — no draining, no guilt.</div>
+    <div class="stat-grid" style="margin-bottom:4px"><div class="stat"><div class="sv">${f}</div><div class="sl">days you showed up</div></div><div class="stat ochre"><div class="sv">${inv.length}</div><div class="sl">treasures collected</div></div></div>
+    <div class="eyebrow" style="margin-top:16px">Your stats</div>${bars}
+    ${r.length?`<div class="eyebrow" style="margin-top:16px">✨ Rare treasures</div>${grid(r)}`:''}
+    ${u.length?`<div class="eyebrow">Uncommon</div>${grid(u)}`:''}
+    <div class="eyebrow"${(r.length||u.length)?'':' style="margin-top:16px"'}>Common</div>${grid(c)}
+    <div class="btn-row"><button class="btn btn-soft" style="width:100%" onclick="closeModal()">Close</button></div>`);}
+
+/* ============ SHAME-FREE WELCOME BACK / HIBERNATION ============ */
+function checkWelcomeBack(){const last=DB.get('lm_last_open',null);const today=todayISO();
+  if(last&&last!==today){const gap=daysBetween(last);if(gap>=3){window._welcomeGap=gap;setTimeout(()=>showWelcomeBack(gap),700);}}
+  DB.set('lm_last_open',today);}
+function showWelcomeBack(gap){const r=Math.random();const it=makeDrop(r<0.6?'uncommon':'rare');const inv=DB.get('lm_inventory',[]);inv.push(it);DB.set('lm_inventory',inv);
+  showModal(`<div style="text-align:center"><div style="font-size:42px">👸💤</div><h3 style="margin-top:6px">Welcome back 💛</h3>
+    <div class="mdesc" style="margin-bottom:14px">It's been ${gap} days — and that is completely okay. Nothing broke. The princess just rested in her tower, and the garden kept itself. You don't owe anyone the missed days.</div>
+    <div class="card" style="text-align:center;border-left-color:var(--ochre)"><div style="font-size:34px">${it.emoji}</div><div class="card-title" style="margin-top:6px">Welcome-back gift: ${escq(it.name)}</div><div class="card-sub">Just for coming back.</div></div>
+    <div class="btn-row"><button class="btn btn-primary" style="width:100%" onclick="closeModal()">Okay 🌸</button></div></div>`);}
+
+/* ============ COUCH TRANSITION LAUNCHER (zero-decision) ============ */
+const COUCH=[
+  {t:'Step on the vibration plate for 2 minutes',s:'just stand on it — that counts'},
+  {t:"Fill a fresh glass of water",s:"and top off Eleanor's dish while you're up"},
+  {t:'Stand and reach both arms overhead',s:'ten seconds, then sit back down if you want'},
+  {t:'Open a window or step to the door',s:'let some air on your face'},
+  {t:'Put on one movement video — just press play',s:'you can quit after the intro'},
+  {t:'Roll your neck slowly, 3 each way',s:'right where you are'},
+  {t:"Take your meds if you haven't yet",s:'the whole ask, nothing more'},
+  {t:'Walk to the kitchen and back',s:'no goal, just move your legs'},
+  {t:'Two minutes under the red light',s:'sit, scroll, whatever — just be under it'},
+  {t:'Change into comfier clothes',s:'a tiny reset for the body'}];
+let _couchPick=null;
+function openCouch(){rollCouch(true);}
+function rollCouch(first){let i=Math.floor(Math.random()*COUCH.length);
+  if(!first&&COUCH.length>1&&_couchPick!=null){while(i===_couchPick)i=Math.floor(Math.random()*COUCH.length);}
+  _couchPick=i;const c=COUCH[i];
+  showModal(`<div style="text-align:center"><div style="font-size:38px">🛋️</div><h3 style="margin-top:4px">Just this one thing</h3>
+    <div class="mdesc" style="margin-bottom:12px">No list, no deciding. If it doesn't fit, reroll.</div></div>
+    <div class="nowcard e-low" style="text-align:left"><div class="now-title" style="font-size:20px">${escq(c.t)}</div><div class="now-step" style="margin-top:11px">🫱 ${escq(c.s)}</div></div>
+    <div class="btn-row" style="margin-top:14px"><button class="btn btn-primary" style="flex:1" onclick="couchDone()">Did it ✓</button><button class="btn btn-soft" onclick="rollCouch(false)">🎲 Reroll</button></div>
+    <div class="reassure" style="margin-top:10px">Or close this and rest — that's allowed too.</div>`);}
+function couchDone(){const day=getDay();creditShowedUp(day);saveDay(day);checkDiamond();awardReward();addXP('body',1);buildStreak();buildMusts&&buildMusts();updateMascot();closeModal();say("You got off the couch. That's the whole win. 💛");}
+
+/* ============ COMMUTE COOL-DOWN SUITE ============ */
+function airlock(){showModal(`<h3>Airlock 🔒</h3><div class="mdesc">Before you shift into drive. One beat in the parking lot.</div>
+  <div class="mantra">Work is locked in the vault.<br>You gave them your time.<br>For the rest of tonight, your life belongs to you.<br><b>No productivity allowed.</b></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" id="pulseBtn" onclick="playPulse()">🌊 15-second grounding pulse</button></div>
+  <div class="steps" style="text-align:center;margin-top:8px">Brown noise. Let your heart rate settle before you drive.</div>
+  <div class="btn-row"><button class="btn btn-soft" style="width:100%" onclick="stopPulse();closeModal()">Done</button></div>`);}
+let _ac=null,_noiseSrc=null,_pulseTimer=null;
+function playPulse(){stopPulse();try{const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();_ac=ac;
+    const size=2*ac.sampleRate,buf=ac.createBuffer(1,size,ac.sampleRate),data=buf.getChannelData(0);let last=0;
+    for(let i=0;i<size;i++){const w=Math.random()*2-1;data[i]=(last+0.02*w)/1.02;last=data[i];data[i]*=3.5;}
+    const src=ac.createBufferSource();src.buffer=buf;src.loop=true;const g=ac.createGain();g.gain.value=0;
+    src.connect(g).connect(ac.destination);src.start();_noiseSrc=src;const t=ac.currentTime;
+    g.gain.linearRampToValueAtTime(0.45,t+1.5);g.gain.setValueAtTime(0.45,t+13.5);g.gain.linearRampToValueAtTime(0.0001,t+15);
+    const b=document.getElementById('pulseBtn');if(b){b.textContent='🌊 breathe… (15s)';b.disabled=true;}
+    _pulseTimer=setTimeout(()=>{stopPulse();const b2=document.getElementById('pulseBtn');if(b2){b2.textContent='🌊 Again';b2.disabled=false;}},15200);
+  }catch(e){toast('Audio needs a tap first — try again.');}}
+function stopPulse(){try{_noiseSrc&&_noiseSrc.stop();}catch(e){}try{_ac&&_ac.close();}catch(e){}clearTimeout(_pulseTimer);_ac=_noiseSrc=null;}
+function burnDay(){showModal(`<h3>Burn the day 🔥</h3><div class="mdesc">Dump the thing still gripping you. Type it — you won't keep it. Then watch it go.</div>
+  <div class="field" style="display:flex;gap:8px"><input id="vent_txt" style="flex:1" placeholder="what are you still carrying?" onkeydown="if(event.key==='Enter')doBurn()"><button class="btn btn-soft" id="ventMic" style="width:52px;font-size:18px" onclick="toggleMic('vent_txt','ventMic')">🎤</button></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" onclick="doBurn()">🔥 Burn it</button><button class="btn btn-soft" onclick="closeModal()">Cancel</button></div>`);
+  setTimeout(()=>document.getElementById('vent_txt')?.focus(),100);}
+function doBurn(){stopMic();const it=rollDrop();const inv=DB.get('lm_inventory',[]);inv.push(it);DB.set('lm_inventory',inv);
+  document.getElementById('modal').innerHTML=`<div class="burn-stage"><div class="paper" id="paperBall">📄</div><div class="flame" id="flame">🔥</div></div><div style="text-align:center;font-family:'Lora',serif;font-style:italic;color:var(--brown-mid)">letting it go…</div>`;
+  setTimeout(()=>{const p=document.getElementById('paperBall'),f=document.getElementById('flame');if(p)p.classList.add('burning');if(f)f.classList.add('lit');},60);
+  setTimeout(()=>{document.getElementById('modal').innerHTML=`<div style="text-align:center;padding:6px 0"><div style="font-size:44px">🌱</div><h3 style="margin-top:8px">Composted.</h3>
+    <div class="mdesc" style="margin-bottom:14px">That's fertilizer now — your garden's a little richer for letting it go.</div>
+    <div class="card" style="text-align:center;border-left-color:var(--moss)"><div style="font-size:30px">${it.emoji}</div><div class="card-title" style="margin-top:4px">${escq(it.name)}</div></div>
+    <div class="btn-row"><button class="btn btn-primary" style="width:100%" onclick="closeModal()">Drive home lighter 🚗</button></div></div>`;},2150);}
+function gratitude3(){showModal(`<h3>Three words 🌾</h3><div class="mdesc">Three good things from today — one word each is plenty. Pulls you out of the road-rage spiral.</div>
+  <div class="field"><input id="g1" placeholder="one" onkeydown="if(event.key==='Enter')document.getElementById('g2').focus()"></div>
+  <div class="field"><input id="g2" placeholder="two" onkeydown="if(event.key==='Enter')document.getElementById('g3').focus()"></div>
+  <div class="field"><input id="g3" placeholder="three" onkeydown="if(event.key==='Enter')saveGrat3()"></div>
+  <div class="btn-row"><button class="btn btn-primary" style="flex:1" onclick="saveGrat3()">Keep it 🌾</button><button class="btn btn-soft" onclick="closeModal()">Skip</button></div>`);
+  setTimeout(()=>document.getElementById('g1')?.focus(),100);}
+function saveGrat3(){const w=[val('g1'),val('g2'),val('g3')].filter(Boolean);if(!w.length){closeModal();return;}
+  const g=DB.get('lm_gratitude',[]);g.unshift({date:todayISO(),words:w});DB.set('lm_gratitude',g);addXP('growth',1);closeModal();toast('Held onto the good stuff 🌾');say('Good things, noticed. 🌾');}
+
+/* ============ QUICK EMOJI LOG (Now) ============ */
+function buildQlog(){const el=document.getElementById('qlog');if(!el)return;const day=getDay();
+  el.innerHTML=`<button class="ql ${day.water?'on':''}" onclick="qlog('water')">💧<span>${day.water?day.water+' water':'Water'}</span></button>
+    <button class="ql ${day.head==='migraine'?'on':''}" onclick="qlog('migraine')">⚡<span>Migraine</span></button>
+    <button class="ql ${day.movement?'on':''}" onclick="qlog('stretched')">🧘<span>Stretched</span></button>
+    <button class="ql ${day.vibration?'on':''}" onclick="qlog('redlight')">🌟<span>Red light</span></button>`;}
+function qlog(k){const day=getDay();
+  if(k==='water'){day.water=(day.water||0)+1;creditShowedUp(day);toast('💧 '+day.water+' today');}
+  else if(k==='migraine'){day.head=day.head==='migraine'?null:'migraine';toast(day.head?'Logged ⚡ — go easy':'Cleared');}
+  else if(k==='stretched'){day.movement=!day.movement;if(day.movement){creditShowedUp(day);addXP('body',1);}toast(day.movement?'🧘 counts as movement':'Cleared');}
+  else if(k==='redlight'){day.vibration=!day.vibration;if(day.vibration){creditShowedUp(day);addXP('body',1);}toast(day.vibration?'🌟 logged':'Cleared');}
+  if(k==='water'&&day.water===1)addXP('body',1);
+  saveDay(day);checkDiamond();buildMusts();updateMascot();buildStreak();}
+
+/* ============ MICRO-AI BYTE FEED (Work) ============ */
+const BYTES=[
+  {t:'Prompt like a brief, not a search',b:'Give the model a role, the context, the goal, and the format you want back — "You are an L&D specialist. Here\'s the audience… give me 3 bullets." Specificity beats keywords every time.'},
+  {t:'Few-shot: show, don\'t tell',b:'Paste 2–3 examples of the output you want. Models copy patterns far more reliably than they follow a description of a pattern.'},
+  {t:'Ask for the format up front',b:'"Return a table with columns X, Y, Z" or "reply in 5 bullets max." Deciding the shape of the answer before you ask saves the back-and-forth.'},
+  {t:'The "explain it back" check',b:'Before trusting an AI answer, ask it to explain its reasoning or cite where each claim came from. Confident tone ≠ correct.'},
+  {t:'Automate the boring middle, not the judgment',b:'AI is great at first drafts, reformatting, and summarizing. Keep the human on the decision and the final voice — that\'s where your value is.'},
+  {t:'Chain, don\'t cram',b:'For a big task, break it into steps and run them in sequence (outline → draft → polish) instead of one giant prompt. Cleaner output, easier to fix.'},
+  {t:'Temperature = creativity dial',b:'Low temperature = focused, repeatable (good for data/summaries). High = varied, creative (good for brainstorming names or angles).'},
+  {t:'RAG in one line',b:'"Retrieval-augmented generation" = give the model your documents to answer from, so it quotes your source of truth instead of guessing. This is how most internal AI assistants work.'},
+  {t:'Onboarding is a prompt library',b:'The fastest AI win in L&D: turn your best SME answers into reusable prompt templates. New hires get expert-level help without booking the expert.'},
+  {t:'Evals = tests for AI output',b:'Before you trust a workflow, write 5–10 example inputs with the "right" answer, and check the AI against them. It\'s QA for prompts.'},
+  {t:'The 80% draft rule',b:'Let AI get you to a rough 80% fast, then spend your energy on the 20% that needs a human. Starting from a draft beats starting from a blank page.'},
+  {t:'Name the audience and it changes everything',b:'"Explain this to a new buyer" vs "to an executive" vs "to an engineer" produces completely different, better-targeted output. Audience is the highest-leverage word in any prompt.'}];
+function aiByte(){let i=DB.get('lm_byte_idx',0)%BYTES.length;const b=BYTES[i];DB.set('lm_byte_idx',i+1);
+  const bf=DB.get('lm_brainfood',0)+1;DB.set('lm_brainfood',bf);addXP('mind',1);
+  showModal(`<h3>🧠 One byte</h3><div class="mdesc">A 60-second concept. You get a little sharper; the princess gets brain food.</div>
+    <div class="card" style="border-left-color:var(--mauve)"><div class="card-title">${escq(b.t)}</div><div class="card-sub" style="font-size:13.5px;line-height:1.55;margin-top:6px">${escq(b.b)}</div></div>
+    <div class="btn-row"><button class="btn btn-ochre" style="flex:1" onclick="aiByte()">Another →</button><button class="btn btn-primary" onclick="say('Brain food. 🧠 Yum.');closeModal()">Got it ✓</button></div>
+    <div class="hiddenline">🧠 ${bf} byte${bf===1?'':'s'} fed</div>`);}
+
+/* ============ APP ICON (pink DTC box) ============ */
+function makeIcon(){try{const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#C98499');g.addColorStop(1,'#9E6072');
+  const rad=40;x.fillStyle=g;x.beginPath();x.moveTo(rad,0);x.arcTo(180,0,180,180,rad);x.arcTo(180,180,0,180,rad);x.arcTo(0,180,0,0,rad);x.arcTo(0,0,180,0,rad);x.closePath();x.fill();
+  x.fillStyle='#FFFCFB';x.font='800 62px Nunito, Arial, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('DTC',90,96);
+  const url=c.toDataURL('image/png');document.getElementById('appleIcon').href=url;document.getElementById('favIcon').href=url;}catch(e){}}
+
+/* ============ INIT ============ */
+(function init(){
+  const now=new Date();
+  document.getElementById('dateBox').innerHTML=now.toLocaleDateString('en-US',{weekday:'long'})+'<br>'+now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  ['sleepy','curious','happy','thriving','celebrating'].forEach(s=>{const i=new Image();i.src='assets/princess_'+s+'.png';});
+  makeIcon();autoCreditGraduated();buildNow();buildWorkStrip();checkWelcomeBack();
+})();
+if('serviceWorker' in navigator){
+  const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});`;
+  const blob=new Blob([sw],{type:'text/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+</script>
+</body>
+</html>

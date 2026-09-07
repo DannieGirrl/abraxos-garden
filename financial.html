@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#F4E3E6">
+<title>Money</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;600;700;800&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{--ivory:#F4E3E6;--paper:#FBEEF0;--white:#FFFCFB;--espresso:#4A3730;--brown-mid:#8A6F66;
+    --rosewood:#C98695;--rosewood-dk:#A5636F;--mauve:#9E6072;--moss:#6E7F4A;--moss-dk:#5C6C3C;
+    --ochre:#D19A32;--ochre-dk:#B5822A;--rust:#B5665A;--line:#EBD3D4;
+    --shadow-sm:0 2px 8px rgba(120,70,85,.12);--shadow-md:0 8px 24px rgba(120,70,85,.18);--r:18px;}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--ivory);color:var(--espresso);font-family:'Nunito',sans-serif;-webkit-font-smoothing:antialiased}
+  #app{max-width:440px;margin:0 auto;min-height:100vh;padding-bottom:40px}
+  .header{padding:calc(16px + env(safe-area-inset-top)) 18px 16px;background:linear-gradient(160deg,#C98499 0%,#9E6072 100%);color:#FFF6F8;position:relative;overflow:hidden}
+  .header::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,244,246,.14) 1px,transparent 1px);background-size:18px 18px;pointer-events:none}
+  .back{display:inline-block;font-size:12px;font-weight:800;color:#F6DEE4;text-decoration:none;margin-bottom:8px}
+  .title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1;position:relative;z-index:1}
+  .sub{font-size:12px;color:#F2D6DD;margin-top:6px;position:relative;z-index:1}
+  .wrap{padding:16px}
+  .eyebrow{font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--ochre-dk);display:flex;align-items:center;gap:9px;margin:20px 2px 12px}
+  .eyebrow:first-child{margin-top:4px}
+  .eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
+
+  .payday{background:linear-gradient(150deg,#FBE1E7,#FDF3F1);border:1px solid var(--line);border-left:5px solid var(--rosewood);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow-sm)}
+  .payday .pd-when{font-family:'Playfair Display',serif;font-size:20px;font-weight:700}
+  .payday .pd-cd{font-size:12.5px;color:var(--brown-mid);margin:3px 0 12px}
+  .bonus{background:var(--ochre);color:var(--espresso);font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:11px;display:inline-block;margin-bottom:10px}
+  .check{display:flex;align-items:flex-start;gap:11px;padding:9px 0;cursor:pointer;border-bottom:1px solid rgba(235,211,212,.6)}
+  .check:last-of-type{border-bottom:none}
+  .box{width:20px;height:20px;border-radius:6px;border:2px solid var(--rosewood);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;margin-top:1px}
+  .check.on .box{background:var(--moss);border-color:var(--moss)}
+  .check.on .ctxt{text-decoration:line-through;color:var(--brown-mid)}
+  .ctxt{font-size:14px;font-weight:600;flex:1;min-width:0}.ctxt small{display:block;font-weight:400;font-size:11.5px;color:var(--brown-mid);margin-top:1px}
+  .pd-amt{width:78px;flex-shrink:0;border:1.5px solid var(--rosewood);border-radius:9px;padding:6px 8px;font-family:'Nunito';font-size:13.5px;font-weight:800;color:var(--espresso);text-align:right;background:var(--white)}
+  .pd-amt:focus{outline:none;border-color:var(--ochre-dk)}
+  .btn{border:none;border-radius:12px;font-family:'Nunito';font-weight:800;font-size:13px;padding:11px 15px;cursor:pointer;margin-top:12px}
+  .btn-primary{background:var(--moss);color:#fff;width:100%}
+  .btn:active{transform:scale(.97)}
+
+  /* ===== HOARD ===== */
+  .hoard{background:linear-gradient(165deg,#3A2817,#5A3E22 55%,#33220F);border-radius:20px;padding:17px 18px 0;box-shadow:var(--shadow-md);position:relative;overflow:hidden}
+  .hoard::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(230,190,100,.13) 1px,transparent 1px);background-size:16px 16px;pointer-events:none}
+  .hoard-lab{font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:#E0BE72;position:relative;z-index:2}
+  .hoard-tot{font-family:'Playfair Display',serif;font-size:44px;font-weight:700;line-height:1.05;color:#FBE9B4;text-shadow:0 2px 0 rgba(0,0,0,.4);position:relative;z-index:2}
+  .hoard-sub{font-size:11.5px;color:#CBB58A;margin-top:4px;position:relative;z-index:2}
+  .basin{position:relative;height:148px;margin:8px -18px 0}
+  .coin{position:absolute;width:19px;height:19px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#FFF3C4,#E9C45C 46%,#B5872A);box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 -1px 1px rgba(110,74,10,.55)}
+  .coin::after{content:'';position:absolute;inset:5px;border-radius:50%;border:1.5px solid rgba(255,248,214,.55)}
+  .coin.new{animation:coindrop .6s cubic-bezier(.28,1.5,.5,1)}
+  @keyframes coindrop{0%{transform:translateY(-110px);opacity:0}55%{opacity:1}100%{transform:translateY(0);opacity:1}}
+  .basin-empty{position:absolute;left:18px;right:18px;bottom:20px;font-size:12.5px;color:#A08A5E;text-align:center;line-height:1.5;z-index:1}
+
+  .tiers{display:flex;gap:6px;margin-top:11px;overflow-x:auto;padding-bottom:3px;-webkit-overflow-scrolling:touch}
+  .tier{flex:0 0 auto;width:60px;text-align:center}
+  .tier .sock{width:44px;height:44px;margin:0 auto 4px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:#EFE4D3;border:2px dashed #D8C6AB;color:#BCA684}
+  .tier.on .sock{background:radial-gradient(circle at 34% 30%,#FFF5CC,#E9C45C 50%,#B5872A);border:2px solid #C79E32;box-shadow:0 2px 8px rgba(181,135,42,.45)}
+  .tier .tn{font-size:8.5px;font-weight:800;line-height:1.25;color:#BCA684;text-transform:uppercase;letter-spacing:.3px}
+  .tier.on .tn{color:var(--ochre-dk)}
+
+  .win{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+  .wchip{border:1.5px solid var(--line);background:var(--white);border-radius:20px;padding:7px 11px;font-size:12px;font-weight:700;font-family:'Nunito';color:var(--brown-mid);cursor:pointer}
+  .wchip.on{background:var(--ochre);border-color:var(--ochre-dk);color:#3B2C10}
+  .winrow{display:flex;gap:8px;align-items:stretch}
+  .winrow input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;font-family:'Nunito';font-size:15px;font-weight:700;color:var(--espresso)}
+  .winrow input:focus{outline:none;border-color:var(--rosewood)}
+  .wnote{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:9px 12px;font-family:'Nunito';font-size:13px;color:var(--espresso);margin-top:8px}
+  .wnote:focus{outline:none;border-color:var(--rosewood)}
+  .btn-gold{background:linear-gradient(160deg,#E2B750,#B5872A);color:#2E220B;margin-top:0;white-space:nowrap}
+  .ledger{max-height:200px;overflow-y:auto}
+  .lrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper);font-size:13.5px}
+  .lrow:last-child{border-bottom:none}
+  .lrow .le{font-size:17px;flex-shrink:0}
+  .lrow .lt{font-weight:700}
+  .lrow .ld{font-size:10.5px;font-weight:400;color:var(--brown-mid);margin-top:1px}
+  .lrow .la{margin-left:auto;font-weight:800;color:var(--ochre-dk);flex-shrink:0}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(150px);background:linear-gradient(160deg,#5A3E22,#33220F);color:#FBE9B4;border:1.5px solid #C79E32;border-radius:16px;padding:13px 22px;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:99;text-align:center;transition:transform .45s cubic-bezier(.2,1.35,.4,1);max-width:320px;pointer-events:none}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast .te{font-size:25px;line-height:1.1}
+  .toast .tt{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-top:3px}
+  .toast .ts{font-size:11.5px;color:#CBB58A;margin-top:3px}
+
+  .card{background:var(--white);border-radius:16px;padding:15px 16px;margin-bottom:11px;box-shadow:var(--shadow-sm)}
+  .goal-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .goal-n{font-weight:800;font-size:15px}
+  .goal-v{font-size:12px;color:var(--brown-mid);font-weight:700}
+  .bar{height:9px;border-radius:6px;background:var(--paper);overflow:hidden}
+  .bar>div{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--rosewood),var(--ochre))}
+  .goal-note{font-size:12px;color:var(--brown-mid);margin-top:8px;line-height:1.45}
+  .goal-note b{color:var(--espresso)}
+
+  .bal{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--paper)}
+  .bal:last-child{border-bottom:none}
+  .bal .bn{flex:1;font-size:13.5px;font-weight:700}
+  .bal .bn small{display:block;font-weight:400;font-size:11px;color:var(--brown-mid)}
+  .bal input{width:120px;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-family:'Nunito';font-size:14px;font-weight:700;color:var(--espresso);text-align:right}
+  .bal input:focus{outline:none;border-color:var(--rosewood)}
+
+  .billrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper);font-size:13.5px}
+  .billrow:last-child{border-bottom:none}
+  .billrow .amt{font-weight:800}
+  .auto{font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--moss-dk);background:#EEF2E4;padding:2px 7px;border-radius:9px;margin-left:6px}
+  .scen{width:100%;border-collapse:collapse;font-size:12px}
+  .scen th,.scen td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--paper)}
+  .scen th{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--brown-mid)}
+  .scen .best{background:#FBF0D9}
+  .tip{font-family:'Lora',serif;font-style:italic;font-size:13px;color:var(--brown-mid);margin-top:10px;line-height:1.5}
+  .ref{font-size:12.5px;color:var(--brown-mid);line-height:1.5}
+  .ref b{color:var(--espresso)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <a class="back" href="app.html">← Back</a>
+    <div class="title">Money 💰</div>
+    <div class="sub">Your action plan, alive — not a PDF you never open</div>
+  </div>
+  <div class="wrap">
+    <div class="eyebrow">Your hoard</div>
+    <div class="hoard">
+      <div class="hoard-lab">Lifetime moved toward future you</div>
+      <div class="hoard-tot" id="hoardTot">$0</div>
+      <div class="hoard-sub" id="hoardSub"></div>
+      <div class="basin" id="basin"></div>
+    </div>
+    <div class="tiers" id="tiers"></div>
+
+    <div class="eyebrow">Log a win</div>
+    <div class="card">
+      <div class="win" id="winKinds"></div>
+      <div class="winrow">
+        <input type="number" id="winAmt" placeholder="Amount" inputmode="decimal" min="0">
+        <button class="btn btn-gold" onclick="logWin()">+ Add coins</button>
+      </div>
+      <input type="text" class="wnote" id="winNote" placeholder="Note (optional) — e.g. closed the Amazon cart">
+    </div>
+
+    <div class="eyebrow">Payday ritual</div>
+    <div class="payday" id="payday"></div>
+
+    <div class="eyebrow">Recent coins</div>
+    <div class="card ledger" id="ledger"></div>
+
+    <div class="eyebrow">Goals</div>
+    <div id="goals"></div>
+
+    <div class="eyebrow">Balances (tap to update)</div>
+    <div class="card" id="balances"></div>
+
+    <div class="eyebrow">Monthly bills</div>
+    <div class="card" id="bills"></div>
+
+    <div class="eyebrow">One-time to-dos</div>
+    <div class="card" id="todos"></div>
+
+    <div class="eyebrow">Car payoff — Buick @ 6.30%</div>
+    <div class="card"><table class="scen">
+      <tr><th>Extra/mo</th><th>Payment</th><th>Paid off</th><th>Interest</th></tr>
+      <tr><td>Minimum</td><td>$593</td><td>May 2032</td><td>$9,545</td></tr>
+      <tr><td>+$100</td><td>$693</td><td>Sep 2031</td><td>$7,841</td></tr>
+      <tr><td>+$200</td><td>$793</td><td>Sep 2030</td><td>~$6,300</td></tr>
+      <tr class="best"><td>+$400 ★</td><td>$993</td><td>Apr 2030</td><td>~$5,100</td></tr>
+    </table><div class="tip">Even $100–200 extra/mo saves real money. Use every 3rd-paycheck month as a lump-sum hit. Next bonus months: <b>Jul 2026, Jan 2027</b>.</div></div>
+
+    <div class="eyebrow">Budget snapshot</div>
+    <div class="card ref">
+      <b>Take-home ~$10,200/mo.</b><br>Rent $2,277 · Student loans $1,055 · Car $593 · Phone+Internet $157 · Insurance $155<br>
+      Savings $500/paycheck · Roth $583/mo<br><b>~$1,880 left</b> for groceries, dining, fun. Keep a <b>$1,500 buffer in Chase</b> always.
+    </div>
+
+    <div class="eyebrow">Fidelity accounts</div>
+    <div class="card ref">
+      <b>Blue Origin 401(k):</b> ~$120,119 — leave it, growing ✓<br>
+      <b>Rollover IRA (managed):</b> ~$47,804 — leave it ✓<br>
+      <b>Mike's inherited IRA:</b> ~$78,889 — take ~$7,889/yr in Jan (22% fed withholding) → fund Roth<br>
+      <b>Parker 401(k):</b> ~$5,100 — roll into Rollover IRA (call Fidelity 800-343-3548)<br>
+      <b>Roth IRA:</b> open + $583/mo → Fidelity Freedom Index 2055
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DB={get(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch(e){return f}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
+const todayISO=()=>new Date().toISOString().slice(0,10);
+function daysUntil(iso){const t=new Date(todayISO()+'T00:00:00'),d=new Date(iso+'T00:00:00');return Math.round((d-t)/86400000);}
+function fmt(n){return '$'+Number(Math.round(n)).toLocaleString();}
+function isBonusMonth(iso){return /^2026-07|^2027-01/.test(iso);} // 3-paycheck months
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* ===== THE HOARD =====
+   Append-only ledger of money MOVED, not money HELD. Balances can fall; this cannot. */
+const KINDS=[
+  {k:'save',   e:'🏦', t:'Savings'},
+  {k:'debt',   e:'💳', t:'Debt paid'},
+  {k:'extra',  e:'⚡', t:'Extra hit'},
+  {k:'resist', e:'🛑', t:'Resisted'},
+  {k:'invest', e:'📈', t:'Invested'}
+];
+const TIERS=[
+  {v:1000,   n:'First Thousand', e:'🪙'},
+  {v:5000,   n:'Nest Egg',       e:'🥚'},
+  {v:10000,  n:'Vault Keeper',   e:'🔑'},
+  {v:25000,  n:"Dragon's Hoard", e:'🐉'},
+  {v:50000,  n:'Scrooge Tier',   e:'🎩'},
+  {v:100000, n:'Money Bin',      e:'🏛️'}
+];
+let winKind='save';
+function hoard(){const h=DB.get('fin_hoard',[]);return Array.isArray(h)?h:[];}
+function hoardTotal(){return hoard().reduce((s,x)=>s+(+x.a||0),0);}
+function kindOf(k){return KINDS.find(x=>x.k===k)||{e:'🪙',t:'Coin'};}
+function jit(i){return Math.floor(Math.abs(Math.sin(i*12.9898)*43758.5453)%1000);}
+
+function toast(e,t,s){
+  const el=document.getElementById('toast');
+  el.innerHTML='<div class="te">'+e+'</div><div class="tt">'+t+'</div>'+(s?'<div class="ts">'+s+'</div>':'');
+  el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),3400);
+}
+
+/* one coin should represent a round number, and the pile recompacts as it grows */
+function coinValue(tot){
+  const d=[5,10,25,50,100,250,500,1000,2500,5000,10000];
+  for(const v of d){ if(tot/v<=150) return v; }
+  return 25000;
+}
+
+function addCoins(kind,amount,note){
+  amount=Math.round((+amount||0)*100)/100;
+  if(!(amount>0)) return false;
+  const before=hoardTotal();
+  const h=hoard();
+  h.push({d:todayISO(),k:kind,a:amount,n:note||''});
+  DB.set('fin_hoard',h);
+  const after=before+amount;
+  const tier=TIERS.find(t=>before<t.v && after>=t.v);
+  buildHoard(true); buildTiers(); buildLedger();
+  const kd=kindOf(kind);
+  toast(kd.e,'+'+fmt(amount),kd.t+' · the pile only grows');
+  if(tier) setTimeout(()=>toast(tier.e,tier.n+' unlocked',fmt(after)+' moved toward future you'),3600);
+  return true;
+}
+
+function buildHoard(animate){
+  const tot=hoardTotal(), n=hoard().length, per=coinValue(tot);
+  document.getElementById('hoardTot').textContent=fmt(tot);
+  document.getElementById('hoardSub').textContent = tot>0
+    ? n+' win'+(n===1?'':'s')+' logged · each coin = '+fmt(per)
+    : 'Nothing here yet — and nothing can ever take it out once it is.';
+  const count=Math.min(150,Math.floor(tot/per)), PERROW=15;
+  let html='';
+  for(let i=0;i<count;i++){
+    const row=Math.floor(i/PERROW), col=i%PERROW;
+    const left=7+col*23+(jit(i)%9)-4, bottom=6+row*10+(jit(i*7+1)%5)-2;
+    const fresh=animate && i>=count-3 ? ' new' : '';
+    html+='<div class="coin'+fresh+'" style="left:'+left+'px;bottom:'+bottom+'px"></div>';
+  }
+  if(!count) html='<div class="basin-empty">Move $20 to savings, or don\'t spend $60.<br>Both land here as gold.</div>';
+  document.getElementById('basin').innerHTML=html;
+}
+
+function buildTiers(){
+  const tot=hoardTotal();
+  /* unearned sockets carry no name and no target — a collection, not a checklist */
+  document.getElementById('tiers').innerHTML=TIERS.map(t=>{
+    const on=tot>=t.v;
+    return '<div class="tier'+(on?' on':'')+'"><div class="sock">'+(on?t.e:'?')+'</div><div class="tn">'+(on?t.n:'—')+'</div></div>';
+  }).join('');
+}
+
+function buildWinKinds(){
+  document.getElementById('winKinds').innerHTML=KINDS.map(k=>
+    '<button class="wchip'+(winKind===k.k?' on':'')+'" onclick="setWinKind(\''+k.k+'\')">'+k.e+' '+k.t+'</button>').join('');
+}
+function setWinKind(k){winKind=k;buildWinKinds();}
+function logWin(){
+  const a=document.getElementById('winAmt'), nt=document.getElementById('winNote');
+  if(!addCoins(winKind,a.value,nt.value)){a.focus();return;}
+  a.value=''; nt.value='';
+}
+
+function buildLedger(){
+  const el=document.getElementById('ledger'), h=hoard().slice().reverse().slice(0,40);
+  if(!h.length){el.innerHTML='<div class="ref">No coins yet. Moving $20 to savings counts — and so does closing a $60 cart without buying.</div>';return;}
+  el.innerHTML=h.map(x=>{
+    const k=kindOf(x.k);
+    const d=new Date(x.d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return '<div class="lrow"><span class="le">'+k.e+'</span><span><div class="lt">'+k.t+'</div><div class="ld">'+d+(x.n?' · '+esc(x.n):'')+'</div></span><span class="la">+'+fmt(x.a)+'</span></div>';
+  }).join('');
+}
+
+/* payday — rolls forward through missed cycles so it never says "was 36 days ago" */
+function nextPayday(){
+  const stored=DB.get('fin_payday','2026-07-31');
+  let pd=stored, guard=0;
+  while(daysUntil(pd)<0 && guard++<400){
+    const d=new Date(pd+'T00:00:00'); d.setDate(d.getDate()+14); pd=d.toISOString().slice(0,10);
+  }
+  if(pd!==stored) DB.set('fin_payday',pd);
+  return pd;
+}
+function paydayItems(bonus,cc){
+  let debt;
+  if(cc>0){debt=bonus?{k:'debt',t:'BONUS check → big hit on the credit card',s:'highest interest first — attack it',amt:1000,kind:'debt'}:{k:'debt',t:'Extra → credit card',s:'highest interest first, before the car',amt:200,kind:'debt'};}
+  else{debt=bonus?{k:'debt',t:'BONUS check → extra to car loan',s:'3-paycheck month — attack the Buick',amt:1000,kind:'debt'}:{k:'debt',t:'Extra to the car',s:'shaves months + interest',amt:200,kind:'debt'};}
+  return [
+    {k:'ally',t:'Move $500 → Ally savings',s:'the automation; confirm it fired',amt:500,kind:'save'},
+    {k:'buffer',t:'Check $1,500 buffer in Chase',s:'never dip below — this one is just a look'},
+    debt
+  ];
+}
+function buildPayday(){
+  const pd=nextPayday(),cd=daysUntil(pd),bonus=isBonusMonth(pd);
+  const checks=DB.get('fin_paycheck',{})[pd]||{};
+  const items=paydayItems(bonus,bal().cc);
+  const when=new Date(pd+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('payday').innerHTML=
+    (bonus?`<span class="bonus">★ 3-paycheck bonus month</span><br>`:'')+
+    `<div class="pd-when">Next payday · ${when}</div>
+     <div class="pd-cd">${cd>1?'in '+cd+' days':cd===1?'tomorrow':'today 🎉'}</div>`+
+    items.map(it=>{
+      const on=checks[it.k];
+      const amtField=it.amt&&!on?`<input class="pd-amt" id="pa_${it.k}" type="number" inputmode="decimal" value="${it.amt}" onclick="event.stopPropagation()">`:'';
+      return `<div class="check ${on?'on':''}" onclick="togglePay('${it.k}')"><div class="box">${on?'✓':''}</div><div class="ctxt">${it.t}<small>${it.s}</small></div>${amtField}</div>`;
+    }).join('')+
+    `<button class="btn btn-primary" onclick="logPayday()">✓ Payday handled — set next</button>`;
+}
+function togglePay(k){
+  const pd=nextPayday(), all=DB.get('fin_paycheck',{});
+  all[pd]=all[pd]||{};
+  const turningOn=!all[pd][k];
+  all[pd][k]=turningOn;
+  DB.set('fin_paycheck',all);
+  if(turningOn){
+    const it=paydayItems(isBonusMonth(pd),bal().cc).find(i=>i.k===k);
+    if(it&&it.kind){
+      const inp=document.getElementById('pa_'+k);
+      addCoins(it.kind, inp?inp.value:it.amt, 'Payday · '+it.t.replace(/^BONUS check → /,''));
+    }
+  }
+  buildPayday();
+}
+function logPayday(){const pd=nextPayday();const d=new Date(pd+'T00:00:00');d.setDate(d.getDate()+14);DB.set('fin_payday',d.toISOString().slice(0,10));buildPayday();}
+
+/* goals */
+const defBal={cc:0,car:34918,student:80000,ally:10000};
+function bal(){return Object.assign({},defBal,DB.get('fin_bal',{}));}
+function buildGoals(){
+  const b=bal();const sv=DB.get('fin_savegoal',15000);
+  const savePct=Math.min(100,Math.round(b.ally/sv*100));
+  document.getElementById('goals').innerHTML=`
+    <div class="card" style="border-left:4px solid var(--rust)"><div class="goal-h"><span class="goal-n">💳 Pay down credit card</span><span class="goal-v">${fmt(b.cc)}</span></div>
+      <div class="goal-note"><b>Highest interest = first priority.</b> This gets the extra on every payday (and bonus checks) before the car. Update the balance below as it drops.</div></div>
+    <div class="card"><div class="goal-h"><span class="goal-n">🏦 Build savings</span><span class="goal-v">${fmt(b.ally)} / ${fmt(sv)}</span></div>
+      <div class="bar"><div style="width:${savePct}%"></div></div>
+      <div class="goal-note">$500 every payday, auto to Ally. Keep the $1,500 Chase buffer separate. This is a live balance — if you have to dip into it, <b>your hoard above doesn't move.</b></div></div>
+    <div class="card"><div class="goal-h"><span class="goal-n">🚗 Pay off car early</span><span class="goal-v">${fmt(b.car)} left</span></div>
+      <div class="goal-note">6.30% APR · $593/mo. Once the card's handled, <b>+$200/mo saves ~2 years & ~$3,000.</b></div></div>
+    <div class="card"><div class="goal-h"><span class="goal-n">🎓 Refinance student loans</span><span class="goal-v">~${fmt(b.student)}</span></div>
+      <div class="goal-note">Shop <b>SoFi, Earnest, Laurel Road</b> for a lower rate than you're paying now. A 20-min errand that could save thousands.</div></div>
+    <div class="card"><div class="goal-h"><span class="goal-n">📈 Open + fund Roth IRA</span><span class="goal-v">$583/mo</span></div>
+      <div class="goal-note">Fidelity → Roth IRA → auto $583/mo → Fidelity Freedom Index 2055. Funded partly by Mike's IRA distribution.</div></div>`;
+}
+
+/* balances editable */
+function buildBalances(){
+  const b=bal();const sv=DB.get('fin_savegoal',15000);
+  const rows=[['cc','Credit card balance',b.cc,'enter yours — priority #1'],['ally','Ally savings',b.ally,'auto $500/payday'],['car','Car loan (Buick)',b.car,'6.30% APR'],['student','Student loans',b.student,'refinance target'],['savegoal','Savings goal',sv,'edit your target']];
+  document.getElementById('balances').innerHTML=rows.map(([k,n,v,s])=>`<div class="bal"><div class="bn">${n}<small>${s}</small></div><input type="number" value="${v}" onchange="setBal('${k}',this.value)"></div>`).join('');
+}
+function setBal(k,v){v=+v||0;if(k==='savegoal'){DB.set('fin_savegoal',v);}else{const b=DB.get('fin_bal',{});b[k]=v;DB.set('fin_bal',b);}buildGoals();buildBalances();}
+
+/* bills */
+function buildBills(){
+  const bills=[['Rent (Peak Living)',2277,true],['Student loans',1055,true],['Car loan (Buick)',593,true],['Phone + Internet',157,true],['Car insurance (GEICO)',155,true]];
+  document.getElementById('bills').innerHTML=bills.map(([n,a,auto])=>`<div class="billrow"><span>${n}${auto?'<span class="auto">auto</span>':''}</span><span class="amt">${fmt(a)}</span></div>`).join('')+`<div class="tip">Manual eyes-on: student loan, rent, car. Everything else runs itself — just verify monthly.</div>`;
+}
+
+/* one-time todos */
+const TODOS=[
+  {k:'roth',t:'Open Roth IRA at Fidelity',s:'$583/mo auto · Freedom Index 2055'},
+  {k:'refi',t:'Shop student loan refinancing',s:'SoFi · Earnest · Laurel Road'},
+  {k:'parker',t:'Roll over Parker 401(k) → Rollover IRA',s:'call Fidelity 800-343-3548'},
+  {k:'mike',t:"Call Fidelity re: Mike's IRA January distribution",s:'~$7,889/yr, 22% fed withholding'},
+  {k:'subs',t:'Cancel 3 subscriptions',s:'Peacock + SiriusXM + 1 Apple ≈ $50/mo'},
+  {k:'geico',t:'Shop GEICO for a better rate',s:'quick quote comparison'}
+];
+function buildTodos(){
+  const done=DB.get('fin_todos',{});
+  document.getElementById('todos').innerHTML=TODOS.map(t=>`<div class="check ${done[t.k]?'on':''}" onclick="toggleTodo('${t.k}')"><div class="box">${done[t.k]?'✓':''}</div><div class="ctxt">${t.t}<small>${t.s}</small></div></div>`).join('');
+}
+function toggleTodo(k){const d=DB.get('fin_todos',{});d[k]=!d[k];DB.set('fin_todos',d);buildTodos();}
+
+buildHoard();buildTiers();buildWinKinds();buildLedger();
+buildPayday();buildGoals();buildBalances();buildBills();buildTodos();
+</script>
+</body>
+</html>
