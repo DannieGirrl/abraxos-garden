@@ -20,19 +20,36 @@
     --line:#EBD3D4; --gold:#D4A843;
     --shadow-sm:0 2px 8px rgba(120,70,85,.12); --shadow-md:0 8px 24px rgba(120,70,85,.18);
     --r:18px;
+    /* header + room accent — overridden per room / season / time by applyTheme() */
+    --header-a:#C98499; --header-b:#9E6072; --header-ink:#FFF6F8;
   }
+  /* themes cross-fade instead of snapping */
+  html,body,#app,.header,.card,.tabbar{transition:background-color .7s ease,color .55s ease,border-color .55s ease}
+
+  /* DARK GROUNDS — these few rules bake in pale backgrounds. Left alone they'd stay
+     light while the text token flips light, i.e. invisible. */
+  html.dark .guard,html.dark .journal,html.dark .workstrip{
+    background:linear-gradient(150deg,var(--paper),var(--white));border-color:var(--line)}
+  html.dark .walkcard{background:linear-gradient(155deg,rgba(110,158,114,.26),var(--white));border-color:rgba(110,158,114,.4)}
+  html.dark .seed.done{background:rgba(110,158,114,.3)}
+  html.dark .effort.med,html.dark .effort.high,html.dark .pill.due,
+  html.dark .inv-item.t-uncommon,html.dark .inv-item.t-rare{background:rgba(255,255,255,.1)}
+  html.dark .effort.med{color:#E8BE6E}
+  html.dark .effort.high,html.dark .pill.due{color:#E89A88}
+  html.dark .auto{background:rgba(110,158,114,.24);color:#A8D4A8}
+  html.dark .justmeds{color:var(--rosewood)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;overflow:hidden;background:var(--ivory);color:var(--espresso);font-family:'Nunito',sans-serif;-webkit-font-smoothing:antialiased}
   #app{display:flex;flex-direction:column;height:100%;max-width:440px;margin:0 auto;position:relative;background:var(--ivory)}
 
   /* HEADER */
-  .header{padding:calc(12px + env(safe-area-inset-top)) 18px 10px;background:linear-gradient(160deg,#C98499 0%,#9E6072 100%);color:#FFF6F8;position:relative;overflow:hidden;flex-shrink:0}
+  .header{padding:calc(12px + env(safe-area-inset-top)) 18px 10px;background:linear-gradient(160deg,var(--header-a) 0%,var(--header-b) 100%);color:var(--header-ink);position:relative;overflow:hidden;flex-shrink:0}
   .header::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,244,246,.14) 1px,transparent 1px);background-size:18px 18px;pointer-events:none}
   .header-top{display:flex;align-items:center;gap:11px;position:relative;z-index:1}
   .title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;line-height:1}
   .title small{display:block;font-family:'Nunito';font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#F6DEE4;margin-top:3px}
   .date{margin-left:auto;text-align:right;font-size:11px;color:#F2D6DD;font-weight:600;line-height:1.3}
-  .reset-btn{margin-left:10px;background:rgba(255,244,246,.18);border:none;color:#FFF6F8;font-family:'Nunito';font-weight:800;font-size:11px;padding:8px 12px;border-radius:20px;cursor:pointer;flex-shrink:0}
+  .reset-btn{margin-left:10px;background:rgba(255,244,246,.18);border:none;color:var(--header-ink);font-family:'Nunito';font-weight:800;font-size:11px;padding:8px 12px;border-radius:20px;cursor:pointer;flex-shrink:0}
   .reset-btn:active{transform:scale(.95)}
 
   .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 16px calc(96px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
@@ -143,8 +160,8 @@
     transform:translateX(-50%) translateY(140px);
     display:flex;align-items:center;gap:10px;
     max-width:min(340px,88vw);
-    background:linear-gradient(160deg,#4A3730,#2E211C);
-    color:#FBEEF0;border:1px solid rgba(255,255,255,.16);
+    background:linear-gradient(160deg,var(--espresso),#2E211C);
+    color:var(--paper);border:1px solid rgba(255,255,255,.16);
     border-radius:14px;padding:12px 17px;
     box-shadow:0 10px 30px rgba(0,0,0,.4);
     z-index:400;pointer-events:none;
@@ -200,7 +217,7 @@
   .qbtn .qs{display:block;font-weight:600;font-size:10px;color:var(--brown-mid);margin-top:2px}
 
   /* WORK STRIP (read-only) */
-  .workstrip{background:linear-gradient(150deg,#EDE4F0,#FBEEF0);border:1px solid #E3D2E8;border-left:4px solid var(--mauve);border-radius:16px;padding:14px 16px;margin:6px 0}
+  .workstrip{background:linear-gradient(150deg,#EDE4F0,var(--paper));border:1px solid #E3D2E8;border-left:4px solid var(--mauve);border-radius:16px;padding:14px 16px;margin:6px 0}
   .workstrip .wh{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--mauve);margin-bottom:9px;display:flex;align-items:center;gap:7px}
   .workstrip .wi{font-size:13px;color:var(--espresso);padding:5px 0;display:flex;gap:9px;align-items:flex-start;line-height:1.35}
   .workstrip .wi .wd{width:6px;height:6px;border-radius:50%;background:var(--mauve);flex-shrink:0;margin-top:6px}
@@ -270,11 +287,11 @@
   .vcard .vdur{margin-left:auto;font-size:11px;font-weight:800;color:var(--mauve);flex-shrink:0}
 
   /* TAB BAR */
-  .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;background:linear-gradient(0deg,#8E5566 0%,#9E6072 100%);display:flex;padding:8px 6px calc(10px + env(safe-area-inset-bottom));gap:4px;z-index:100}
+  .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;background:linear-gradient(0deg,#8E5566 0%,var(--mauve) 100%);display:flex;padding:8px 6px calc(10px + env(safe-area-inset-bottom));gap:4px;z-index:100}
   .tab{flex:1;border:none;background:transparent;color:#E0B8C3;padding:7px 3px;border-radius:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .18s}
   .tab .ti{font-size:18px;line-height:1}
   .tab .tl{font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
-  .tab.active{background:rgba(255,244,246,.22);color:#FFF6F8}
+  .tab.active{background:rgba(255,244,246,.22);color:var(--header-ink)}
 
   /* MODAL */
   .modal-bg{position:fixed;inset:0;background:rgba(74,45,55,.55);display:none;align-items:flex-end;justify-content:center;z-index:200}
@@ -294,7 +311,7 @@
   .reset-opt:active{transform:scale(.98)}
   .reset-opt .ro-e{font-size:22px}.reset-opt .ro-t{font-weight:800;font-size:14px}.reset-opt .ro-s{font-size:11.5px;color:var(--brown-mid);margin-top:2px}
   .breathe-wrap{text-align:center;padding:10px 0 4px}
-  .breath-circle{width:150px;height:150px;border-radius:50%;margin:14px auto;background:radial-gradient(circle,#E8B4C0 0%,#C98499 70%);box-shadow:0 0 40px rgba(201,132,153,.5);transition:transform 4s ease-in-out}
+  .breath-circle{width:150px;height:150px;border-radius:50%;margin:14px auto;background:radial-gradient(circle,#E8B4C0 0%,var(--header-a) 70%);box-shadow:0 0 40px rgba(201,132,153,.5);transition:transform 4s ease-in-out}
   .breath-phase{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--mauve);min-height:30px}
   .breath-count{font-size:12px;color:var(--brown-mid);margin-top:4px}
   .dump-item{background:var(--white);border-radius:12px;padding:11px 13px;margin-bottom:8px;box-shadow:var(--shadow-sm);font-size:13.5px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
@@ -314,7 +331,7 @@
   .ec-pill.sel{background:var(--rosewood);color:#fff;border-color:var(--rosewood)}
 
   /* COUCH LAUNCHER + QUICK LOG */
-  .couch-btn{width:100%;background:linear-gradient(150deg,#F3E0D2,#FBEEF0);border:1px solid #EAD3C4;border-left:4px solid var(--rust);border-radius:16px;padding:14px;color:var(--espresso);font-weight:800;font-size:14.5px;cursor:pointer;margin:2px 0 10px;display:flex;align-items:center;justify-content:center;gap:9px}
+  .couch-btn{width:100%;background:linear-gradient(150deg,#F3E0D2,var(--paper));border:1px solid #EAD3C4;border-left:4px solid var(--rust);border-radius:16px;padding:14px;color:var(--espresso);font-weight:800;font-size:14.5px;cursor:pointer;margin:2px 0 10px;display:flex;align-items:center;justify-content:center;gap:9px}
   .couch-btn:active{transform:scale(.98)}
   .couch-btn .cse{font-size:11px;font-weight:700;color:var(--brown-mid);display:block}
   .qlog{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:2px 0 10px}
@@ -407,6 +424,7 @@
         <button class="btn btn-ghost" style="flex:1;font-size:11.5px" onclick="document.getElementById('importFile').click()">⬆︎ Restore</button>
       </div>
       <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importAll(this)">
+      <div id="skyRow"></div>
     </section>
 
     <!-- PEOPLE -->
@@ -603,6 +621,7 @@ let SNOOZED=new Set();
 
 /* ============ NAV ============ */
 function go(tab){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+tab).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));document.querySelector('.content').scrollTop=0;
+  applyTheme();   /* each room owns its accent */
   if(tab==='people')buildPeople();if(tab==='life'){renderChores();buildRhythms();}if(tab==='care'){buildCare();}if(tab==='learn'){buildWorkStrip();buildLearn();}}
 
 /* ============ SMALL HELPERS ============ */
@@ -730,6 +749,81 @@ function didNow(kind,id,key){
   SNOOZED.add(key);toast('Nice. ✓');buildNow();
 }
 function logEvent(type,label){const l=DB.get('lm_log',[]);l.push({date:todayISO(),type,label});DB.set('lm_log',l);}
+
+/* ============ THEME ============
+   Two nested cycles of ambient novelty: the app is light by day and dark at night,
+   and every season has its own hue family. Season picks the palette, time of day
+   picks the lightness, the room picks the accent.
+
+   This works by overriding the SAME token names the whole stylesheet already uses,
+   so none of the 250+ var() call sites change — only what the tokens mean. */
+const SEASON_OF={0:'winter',1:'winter',2:'spring',3:'spring',4:'spring',5:'summer',
+                 6:'summer',7:'summer',8:'autumn',9:'autumn',10:'autumn',11:'winter'};
+const THEMES={
+  spring:{
+    day  :{ivory:'#EDF6E6',paper:'#FBE7F0',white:'#FFFDFB',ink:'#2E4227',mid:'#5E7256',line:'#DDEBD2',ha:'#7FA86E',hb:'#C4739B',hi:'#FFF8FB',dark:0},
+    dusk :{ivory:'#3A2437',paper:'#4A3047',white:'#513551',ink:'#FBEDF4',mid:'#C9A8BE',line:'#5E4058',ha:'#8A5A78',hb:'#4A2C43',hi:'#FFEAF4',dark:1},
+    night:{ivory:'#141A26',paper:'#1C2634',white:'#212D3C',ink:'#E6F0EA',mid:'#94A8A0',line:'#2C3A4A',ha:'#2A3E4E',hb:'#141E28',hi:'#E6F2EC',dark:1}},
+  summer:{
+    day  :{ivory:'#E4F2FA',paper:'#FFF6DE',white:'#FFFDF7',ink:'#123E52',mid:'#4A6E80',line:'#CFE6F0',ha:'#2E8B9E',hb:'#1E6478',hi:'#F0FBFF',dark:0},
+    dusk :{ivory:'#4A1E32',paper:'#63283C',white:'#6E2E40',ink:'#FFEDE2',mid:'#D9A894',line:'#7A3A48',ha:'#C4522E',hb:'#5E1E30',hi:'#FFF0E6',dark:1},
+    night:{ivory:'#08161F',paper:'#0F2430',white:'#132B38',ink:'#DFF2F7',mid:'#82A6B0',line:'#1E3A46',ha:'#155060',hb:'#08202C',hi:'#E4F6FA',dark:1}},
+  autumn:{
+    day  :{ivory:'#FBEBD2',paper:'#FCDCC0',white:'#FFF8EE',ink:'#42200E',mid:'#7A4E30',line:'#EED3B4',ha:'#C25A22',hb:'#8E3A14',hi:'#FFF2E2',dark:0},
+    dusk :{ivory:'#3A140C',paper:'#4E1E12',white:'#582416',ink:'#FFE6D2',mid:'#D9A176',line:'#6B2E1C',ha:'#B8461A',hb:'#4A160A',hi:'#FFEDDC',dark:1},
+    night:{ivory:'#150C06',paper:'#1F140B',white:'#261A0F',ink:'#F7E3C6',mid:'#A88A66',line:'#33240F',ha:'#5E3A14',hb:'#1A0F06',hi:'#FBE8CE',dark:1}},
+  winter:{
+    day  :{ivory:'#EFF7FC',paper:'#DEEBF7',white:'#FDFEFF',ink:'#183048',mid:'#4E6880',line:'#CFE0EE',ha:'#3E7BAE',hb:'#2A5A84',hi:'#F4FBFF',dark:0},
+    dusk :{ivory:'#232A44',paper:'#2E3654',white:'#343E60',ink:'#EDF1FC',mid:'#A8B4D4',line:'#414C70',ha:'#4E5C90',hb:'#242B48',hi:'#F0F4FF',dark:1},
+    night:{ivory:'#080C16',paper:'#0F1524',white:'#131B2C',ink:'#E4EEFC',mid:'#8A9AB8',line:'#1E2840',ha:'#24365A',hb:'#0B1220',hi:'#EAF2FF',dark:1}}
+};
+/* a room owns its accent across every ground, so it stays recognizable */
+const ROOM_ACCENT={now:null,people:'#D98A72',life:'#7A9EC4',care:'#6E9E72',learn:'#B98AD9'};
+
+function todPhase(){const h=new Date().getHours();return h>=7&&h<17?'day':h>=17&&h<21?'dusk':'night';}
+function themeNow(){
+  const s=DB.get('lm_theme_season','')||SEASON_OF[new Date().getMonth()];
+  return THEMES[s][DB.get('lm_theme_tod','')||todPhase()];
+}
+function applyTheme(){
+  const t=themeNow(), r=document.documentElement.style;
+  const acc=ROOM_ACCENT[currentTab()]||t.ha;
+  r.setProperty('--ivory',t.ivory); r.setProperty('--paper',t.paper);
+  r.setProperty('--white',t.white); r.setProperty('--espresso',t.ink);
+  r.setProperty('--brown-mid',t.mid); r.setProperty('--line',t.line);
+  r.setProperty('--header-a',t.ha); r.setProperty('--header-b',t.hb);
+  r.setProperty('--header-ink',t.hi);
+  r.setProperty('--rosewood',acc); r.setProperty('--mauve',acc);
+  /* shadows have to lighten on dark grounds or every card grows a black halo */
+  r.setProperty('--shadow-sm',t.dark?'0 2px 10px rgba(0,0,0,.4)':'0 2px 8px rgba(120,70,85,.12)');
+  r.setProperty('--shadow-md',t.dark?'0 8px 26px rgba(0,0,0,.5)':'0 8px 24px rgba(120,70,85,.18)');
+  document.documentElement.classList.toggle('dark',!!t.dark);
+  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t.ivory);
+}
+function currentTab(){
+  const a=document.querySelector('.panel.active');
+  return a?a.id.replace('panel-',''):'now';
+}
+/* Auto is the default and the point — the override exists so she can see December
+   in September. "Auto" clears it so the app goes back to following the real clock. */
+function setSky(kind,val){
+  if(val===null)DB.set(kind==='s'?'lm_theme_season':'lm_theme_tod','');
+  else DB.set(kind==='s'?'lm_theme_season':'lm_theme_tod',val);
+  applyTheme();buildSkyRow();
+}
+function buildSkyRow(){
+  const el=document.getElementById('skyRow');if(!el)return;
+  const s=DB.get('lm_theme_season',''),t=DB.get('lm_theme_tod','');
+  const chip=(on,label,fn)=>`<button class="lchip${on?' on':''}" onclick="${fn}">${label}</button>`;
+  el.innerHTML=`<div class="lrow" style="margin-top:12px"><span class="lcap">Sky</span>`
+    +chip(!s&&!t,'Auto','setSky(\'s\',null);setSky(\'t\',null)')
+    +chip(s==='spring','Spring',"setSky('s','spring')")+chip(s==='summer','Summer',"setSky('s','summer')")
+    +chip(s==='autumn','Autumn',"setSky('s','autumn')")+chip(s==='winter','Winter',"setSky('s','winter')")
+    +`</div><div class="lrow"><span class="lcap"></span>`
+    +chip(t==='day','Day',"setSky('t','day')")+chip(t==='dusk','Dusk',"setSky('t','dusk')")
+    +chip(t==='night','Night',"setSky('t','night')")
+    +`</div>`;
+}
 
 /* ============ THE CONSTELLATION ============
    The mascot is gone. It reflected state she already knew — three taps made the
@@ -1514,7 +1608,10 @@ function makeIcon(){try{const c=document.createElement('canvas');c.width=c.heigh
 (function init(){
   const now=new Date();
   document.getElementById('dateBox').innerHTML=now.toLocaleDateString('en-US',{weekday:'long'})+'<br>'+now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  makeIcon();autoCreditGraduated();buildNow();buildWorkStrip();checkWelcomeBack();
+  applyTheme();makeIcon();autoCreditGraduated();buildNow();buildWorkStrip();buildSkyRow();checkWelcomeBack();
+  /* re-theme when the app is reopened later in the day, and on the hour */
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)applyTheme();});
+  setInterval(applyTheme,15*60*1000);
 })();
 if('serviceWorker' in navigator){
   const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});`;
