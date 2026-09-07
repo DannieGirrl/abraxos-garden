@@ -1,2 +1,8 @@
 *.bak-launcher
 *.bak
+
+# reference art and the throwaway mockup — kept on disk, out of the repo.
+# the real app uses no image files at all.
+design-preview.html
+assets/
+_old/
