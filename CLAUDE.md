@@ -25,8 +25,8 @@ as sub-pages.
 
 ## Where the files are
 
-**⚠️ The live app is HERE, in `danielle-hq/`.** `../life-management-app/` and `../life-os/` are stale
-predecessors — do not edit them.
+**The live app is HERE.** Sibling projects are indexed in `../CLAUDE.md`; their design systems are
+deliberately different, so do not carry conventions across.
 
 | File | Role |
 |---|---|
