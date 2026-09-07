@@ -44,26 +44,33 @@
   .eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
   .voice{font-family:'Lora',serif;font-style:italic;color:var(--brown-mid);font-size:14px;line-height:1.5;margin:0 2px 14px}
 
-  /* MASCOT (the princess) */
-  .mascot-hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 2px;position:relative}
-  .mascot-wrap{position:relative;width:150px;height:156px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer}
-  .mascot{width:150px;height:156px;position:relative;transform-origin:center bottom;display:flex;align-items:flex-end;justify-content:center}
-  .mascot svg{width:100%;height:100%;display:block}
-  .mascot-img{height:154px;width:auto;display:block;filter:drop-shadow(0 3px 5px rgba(120,70,85,.18))}
-  .mascot.breathe{animation:mbreathe 3.8s ease-in-out infinite}
-  .mascot.float{animation:mfloat 2.6s ease-in-out infinite}
-  .mascot.shimmy{animation:mshimmy .6s ease-in-out 3}
-  @keyframes mbreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
-  @keyframes mfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-  @keyframes mshimmy{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
-  .mascot .eyes-open{display:block}.mascot .eyes-closed{display:none}
-  .mascot.sleepy .eyes-open{display:none}.mascot.sleepy .eyes-closed{display:block}
-  .mascot-badge{position:absolute;top:26px;left:0;font-size:19px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
-  .mascot-gem{position:absolute;bottom:6px;right:20px;font-size:18px;opacity:0;transition:opacity .4s}
-  .mascot.thriving .mascot-gem,.mascot.celebrating .mascot-gem{opacity:1}
-  .mascot-zzz{position:absolute;top:0;left:22px;font-size:16px;opacity:0}
-  .mascot.sleepy .mascot-zzz{opacity:.85}
-  .speech{margin-top:8px;background:var(--white);border-radius:16px;padding:9px 15px;font-family:'Lora',serif;font-style:italic;font-size:13.5px;color:var(--espresso);box-shadow:var(--shadow-sm);max-width:300px;text-align:center;line-height:1.4}
+  /* THE CONSTELLATION
+     Replaces the mascot. Every completed thing places a star, tinted by which part
+     of life it came from. Stars never go out. The field shows the last 90 days so
+     it stays legible; the lifetime count beneath it only ever climbs. */
+  .sky{
+    position:relative;height:168px;margin:4px 0 2px;
+    border-radius:16px;overflow:hidden;cursor:pointer;
+    background:linear-gradient(175deg,#1B1430 0%,#2A1F44 58%,#3A2846 100%);
+    box-shadow:inset 0 0 40px rgba(0,0,0,.4);
+  }
+  .sky .st{position:absolute;border-radius:50%}
+  .sky .skyfoot{
+    position:absolute;left:13px;right:13px;bottom:10px;
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:'Nunito',sans-serif;font-size:10.5px;font-weight:700;
+    letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.55);
+  }
+  .sky .skyfoot b{font-size:15px;letter-spacing:0;color:rgba(255,255,255,.9)}
+  .sky .skyempty{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:0 34px;text-align:center;font-family:'Lora',serif;font-style:italic;
+    font-size:13.5px;color:rgba(255,255,255,.6);line-height:1.5;
+  }
+  .sky .named{
+    position:absolute;font-family:'Lora',serif;font-style:italic;font-size:10.5px;
+    color:rgba(255,255,255,.42);letter-spacing:.3px;
+  }
 
   /* ENERGY */
   .ask{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;margin:14px 2px 12px;text-align:center}
@@ -378,17 +385,7 @@
   <div class="content">
     <!-- NOW -->
     <section class="panel active" id="panel-now">
-      <div class="mascot-hero">
-        <div class="mascot-wrap" onclick="openGarden()">
-          <div class="mascot sleepy breathe" id="mascot">
-            <img class="mascot-img" id="mascotImg" src="assets/princess_full.png" alt="princess">
-            <div class="mascot-badge" id="mascotBadge">🌙</div>
-            <div class="mascot-gem" id="mascotGem">💎</div>
-            <div class="mascot-zzz" id="mascotZzz">💤</div>
-          </div>
-        </div>
-        <div class="speech" id="speech">Hey. Let's take it one thing at a time.</div>
-      </div>
+      <div class="sky" id="sky" onclick="openGarden()"></div>
       <div class="bloom" id="bloom"></div>
       <div id="nowBody"></div>
       <button class="couch-btn" onclick="openCouch()">🛋️ I'm stuck on the couch<span class="cse">one tiny thing, zero deciding</span></button>
@@ -734,28 +731,72 @@ function didNow(kind,id,key){
 }
 function logEvent(type,label){const l=DB.get('lm_log',[]);l.push({date:todayISO(),type,label});DB.set('lm_log',l);}
 
-/* ============ MASCOT (the princess) ============ */
-const MASCOT={sleepy:{badge:'🌙',speech:['Just meds today is a full win.','Rest is doing something. I mean it.','One tiny thing, or nothing. Both okay.']},
-  curious:{badge:'✨',speech:['Nice — one down. No pressure for more.','A start is the hard part. You did it.']},
-  happy:{badge:'💗',speech:['Two of three. Look at you.','The day is on your side now.']},
-  thriving:{badge:'🌟',speech:['All three. You took real care of yourself today. 💛','This is what a good day looks like.']},
-  celebrating:{badge:'👑',speech:['A whole diamond week. I am SO proud of you.','You showed up all week. That is huge.']}};
-function mascotState(){const day=getDay();const seeds=[day.meds,day.vibration,day.movement].filter(Boolean).length;
-  const dl=lastWeekDiamond();if(dl&&seeds>=2)return'celebrating';
-  return seeds===0?'sleepy':seeds===1?'curious':seeds===2?'happy':'thriving';}
-function lastWeekDiamond(){const dm=getDiamonds();if(!dm.length)return false;
-  const d=new Date();d.setDate(d.getDate()-7);const jan1=new Date(d.getFullYear(),0,1);const wk=Math.ceil((((d-jan1)/86400000)+jan1.getDay()+1)/7);
-  return dm.includes(`week_${d.getFullYear()}-W${String(wk).padStart(2,'0')}`);}
-function updateMascot(){const st=mascotState();const m=document.getElementById('mascot');if(!m)return;
-  m.className='mascot '+st+(st==='sleepy'?'':' breathe')+(st==='thriving'?' float':'')+(st==='celebrating'?' shimmy float':'');
-  const img=document.getElementById('mascotImg');if(img){const src='assets/princess_'+st+'.png';if(!(img.getAttribute('src')===src))img.setAttribute('src',src);}
-  document.getElementById('mascotBadge').textContent=MASCOT[st].badge;
-  const sp=document.getElementById('speech');if(sp){sp.textContent=MASCOT[st].speech[new Date().getDate()%MASCOT[st].speech.length];}
+/* ============ THE CONSTELLATION ============
+   The mascot is gone. It reflected state she already knew — three taps made the
+   princess smile — so it carried no information and went stale on a schedule.
+   This accumulates evidence instead: one star per completed thing, tinted by which
+   part of life it came from, and nothing ever goes out.
+
+   Only the last 90 days are drawn, or after a couple of years the field turns into
+   an undifferentiated white smear. The lifetime count below it is monotonic. */
+const DOMAIN_HUE={body:'#6E9E72',money:'#E0B44E',people:'#D98A72',home:'#7A9EC4',growth:'#B98AD9'};
+const SKY_DAYS=90, SKY_MAX=230;
+function starSeed(i){return Math.abs(Math.sin(i*12.9898)*43758.5453)%1;}
+
+/* every completed thing in the window, newest first, as {hue, big} */
+function skyStars(){
+  const out=[];
+  for(let i=0;i<SKY_DAYS;i++){
+    const iso=offset(-i), raw=localStorage.getItem('day_'+iso);
+    if(raw){
+      let d={};try{d=JSON.parse(raw)}catch(e){}
+      if(d.meds)out.push({h:DOMAIN_HUE.body});
+      if(d.movement)out.push({h:DOMAIN_HUE.body});
+      if(d.vibration)out.push({h:DOMAIN_HUE.body});
+      if((d.water||0)>=1)out.push({h:DOMAIN_HUE.body});
+      if(d.energy&&d.head&&d.gut)out.push({h:DOMAIN_HUE.growth});
+    }
+  }
+  const cut=offset(-SKY_DAYS);
+  (DB.get('lm_log',[])||[]).forEach(e=>{
+    if(!e||!e.date||e.date<cut)return;
+    out.push({h:e.type==='person'?DOMAIN_HUE.people:e.type==='rhythm'?DOMAIN_HUE.home:DOMAIN_HUE.body});
+  });
+  const fh=DB.get('fin_hoard',[]);
+  (Array.isArray(fh)?fh:[]).forEach(x=>{if(x&&x.d>=cut)out.push({h:DOMAIN_HUE.money});});
+  /* a diamond week is a landmark, not another pinprick */
+  getDiamonds().slice(-6).forEach(()=>out.push({h:'#FFFFFF',big:1}));
+  return out;
 }
-/* Single seam for "the day changed, re-render it." Bloom used to be rendered from
-   inside updateMascot(), which meant deleting the mascot would silently kill the
-   bloom bar. When the mascot goes, only this function changes. */
-function refreshDay(){buildBloom();updateMascot();}
+function lifetimeStars(){
+  let n=getFlowers().length + (DB.get('lm_log',[])||[]).length;
+  const fh=DB.get('fin_hoard',[]); n+=(Array.isArray(fh)?fh:[]).length;
+  const pb=DB.get('lm_pb',{}); n+=Object.keys(pb||{}).length;
+  return n;
+}
+function buildSky(){
+  const el=document.getElementById('sky');if(!el)return;
+  const all=skyStars(), shown=all.slice(0,SKY_MAX), total=lifetimeStars();
+  let h='';
+  shown.forEach((s,i)=>{
+    const sz=s.big?5:(starSeed(i*7)<.18?3.4:starSeed(i*11)<.5?2.4:1.8);
+    const op=s.big?1:(0.42+starSeed(i*13)*0.55);
+    const x=(3+starSeed(i*17)*94).toFixed(1), y=(5+starSeed(i*23)*76).toFixed(1);
+    h+=`<div class="st" style="left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;`
+      +`background:${s.h};opacity:${op.toFixed(2)};box-shadow:0 0 ${s.big?11:6}px ${s.h}"></div>`;
+  });
+  if(!shown.length){
+    h='<div class="skyempty">Nothing up there yet. Do any one thing and it lights up — and it stays lit.</div>';
+  }else{
+    if(total>=40)h+=`<div class="named" style="left:16%;top:24%">the long spring</div>`;
+    if(total>=120)h+=`<div class="named" style="left:56%;top:60%">payday</div>`;
+    h+=`<div class="skyfoot"><span><b>${total}</b> ${total===1?'star':'stars'}</span>`
+      +`<span>${shown.length<all.length?'last 90 days':'nothing goes out'}</span></div>`;
+  }
+  el.innerHTML=h;
+}
+/* Single seam for "the day changed, re-render it." */
+function refreshDay(){buildBloom();buildSky();}
 
 /* ============ FEEDBACK ============
    say() used to write into the mascot's speech bubble, which made the bubble the
@@ -830,8 +871,14 @@ function buildMusts(){
   const jm=document.getElementById('justMedsLink');
   if(jm)jm.style.display=isGraduated('meds')?'none':'';   // pointless once meds runs itself
   buildQlog();}
+/* per-seed confirmations, no mood state involved — it just tells you what landed */
+const SEED_SAY={
+  meds:'Meds down. That is the one that matters. 💊',
+  vibration:'Plate done. You stood still on purpose. 🌟',
+  movement:'Movement logged. However small it was. 🎵'
+};
 function tapSeed(k){const day=getDay();day[k]=!day[k];if(day[k]){creditShowedUp(day);}saveDay(day);checkDiamond();if(day[k]){awardReward();addXP('body',1);}
-  const st=mascotState();if(day[k]&&(k==='meds'||st!=='sleepy'))say(MASCOT[st].speech[0]);buildMusts();refreshDay();buildStreak();buildNow&&buildNowLight();}
+  if(day[k])say(SEED_SAY[k]||'Logged. ✓');buildMusts();refreshDay();buildStreak();buildNow&&buildNowLight();}
 function buildNowLight(){/* refresh musts-dependent chrome without rebuilding energy UI */}
 function justMeds(){const day=getDay();if(!day.meds){day.meds=true;creditShowedUp(day);saveDay(day);checkDiamond();buildMusts();refreshDay();buildStreak();say('Just meds today is a full win. 💊');}}
 function creditShowedUp(day){if(!day.showed_up){day.showed_up=true;day.timestamp=new Date().toISOString();const f=getFlowers();if(!f.includes(todayISO())){f.push(todayISO());saveFlowers(f);}}}
@@ -1356,7 +1403,7 @@ function checkWelcomeBack(){const last=DB.get('lm_last_open',null);const today=t
   DB.set('lm_last_open',today);}
 function showWelcomeBack(gap){const r=Math.random();const it=makeDrop(r<0.6?'uncommon':'rare');const inv=DB.get('lm_inventory',[]);inv.push(it);DB.set('lm_inventory',inv);
   showModal(`<div style="text-align:center"><div style="font-size:42px">👸💤</div><h3 style="margin-top:6px">Welcome back 💛</h3>
-    <div class="mdesc" style="margin-bottom:14px">It's been ${gap} days — and that is completely okay. Nothing broke. The princess just rested in her tower, and the garden kept itself. You don't owe anyone the missed days.</div>
+    <div class="mdesc" style="margin-bottom:14px">It's been ${gap} days — and that is completely okay. Nothing broke. Every star you've earned is still up there, and none of them went out while you were gone. You don't owe anyone the missed days.</div>
     <div class="card" style="text-align:center;border-left-color:var(--ochre)"><div style="font-size:34px">${it.emoji}</div><div class="card-title" style="margin-top:6px">Welcome-back gift: ${escq(it.name)}</div><div class="card-sub">Just for coming back.</div></div>
     <div class="btn-row"><button class="btn btn-primary" style="width:100%" onclick="closeModal()">Okay 🌸</button></div></div>`);}
 
@@ -1451,7 +1498,7 @@ const BYTES=[
   {t:'Name the audience and it changes everything',b:'"Explain this to a new buyer" vs "to an executive" vs "to an engineer" produces completely different, better-targeted output. Audience is the highest-leverage word in any prompt.'}];
 function aiByte(){let i=DB.get('lm_byte_idx',0)%BYTES.length;const b=BYTES[i];DB.set('lm_byte_idx',i+1);
   const bf=DB.get('lm_brainfood',0)+1;DB.set('lm_brainfood',bf);addXP('mind',1);
-  showModal(`<h3>🧠 One byte</h3><div class="mdesc">A 60-second concept. You get a little sharper; the princess gets brain food.</div>
+  showModal(`<h3>🧠 One byte</h3><div class="mdesc">A 60-second concept. You get a little sharper, and it puts a star up.</div>
     <div class="card" style="border-left-color:var(--mauve)"><div class="card-title">${escq(b.t)}</div><div class="card-sub" style="font-size:13.5px;line-height:1.55;margin-top:6px">${escq(b.b)}</div></div>
     <div class="btn-row"><button class="btn btn-ochre" style="flex:1" onclick="aiByte()">Another →</button><button class="btn btn-primary" onclick="say('Brain food. 🧠 Yum.');closeModal()">Got it ✓</button></div>
     <div class="hiddenline">🧠 ${bf} byte${bf===1?'':'s'} fed</div>`);}
@@ -1467,7 +1514,6 @@ function makeIcon(){try{const c=document.createElement('canvas');c.width=c.heigh
 (function init(){
   const now=new Date();
   document.getElementById('dateBox').innerHTML=now.toLocaleDateString('en-US',{weekday:'long'})+'<br>'+now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  ['sleepy','curious','happy','thriving','celebrating'].forEach(s=>{const i=new Image();i.src='assets/princess_'+s+'.png';});
   makeIcon();autoCreditGraduated();buildNow();buildWorkStrip();checkWelcomeBack();
 })();
 if('serviceWorker' in navigator){
