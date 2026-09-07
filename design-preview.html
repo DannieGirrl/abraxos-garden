@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>DTC — design preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  background:#111;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+
+/* ============ THEME TOKENS (set by JS) ============ */
+#app{
+  --ground-a:#F5F8FB; --ground-b:#E8EFF5;
+  --ink:#1F2833; --muted:#5A6675; --line:rgba(31,40,51,.12);
+  --surface:rgba(255,255,255,.72); --surface-2:rgba(255,255,255,.5);
+  --accent:#3E6E8E; --on-accent:#fff;
+  --glow:rgba(255,255,255,.5);
+  position:relative;
+  max-width:430px; margin:0 auto; min-height:100vh;
+  background:linear-gradient(170deg,var(--ground-a) 0%,var(--ground-b) 100%);
+  color:var(--ink);
+  transition:background .8s ease, color .5s ease;
+  overflow:hidden;
+  padding-bottom:96px;
+}
+
+/* ============ SKY LAYERS ============ */
+.sky{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lightsource{
+  position:absolute;border-radius:50%;
+  filter:blur(2px);
+  transition:all 1s ease;
+}
+.stars{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease}
+.stars.on{opacity:1}
+.stars i{position:absolute;background:#fff;border-radius:50%;width:2px;height:2px}
+.particles{position:absolute;inset:0;overflow:hidden}
+.particles span{position:absolute}
+/* blossom petal — one rounded corner off, so it reads as a petal not a dot */
+.particles span.petal{border-radius:60% 0 60% 60%}
+/* changing leaf — pointed at two corners */
+.particles span.leaf{border-radius:0 100% 0 100%}
+/* snow + winter shimmer */
+.particles span.snow{border-radius:50%;box-shadow:0 0 7px rgba(255,255,255,.9)}
+/* sun sparkle — a plus, via a crossing pseudo-element */
+.particles span.spark{border-radius:50%}
+.particles span.spark::after{
+  content:'';position:absolute;inset:-140% 40%;background:inherit;border-radius:40%;opacity:.85;
+}
+.particles span.spark::before{
+  content:'';position:absolute;inset:40% -140%;background:inherit;border-radius:40%;opacity:.85;
+}
+.rain{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity .8s ease}
+.rain.on{opacity:1}
+.rain i{
+  position:absolute;width:1px;height:38px;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.45));
+  animation:fall linear infinite;
+}
+@keyframes fall{from{transform:translateY(-60px)}to{transform:translateY(110vh)}}
+
+/* ============ CHROME ============ */
+.wrap{position:relative;z-index:2;padding:0 18px}
+.topbar{
+  position:relative;z-index:3;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:calc(18px + env(safe-area-inset-top)) 18px 14px;
+}
+.eyebrow{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--muted);
+}
+.roomname{
+  font-family:'Fraunces',serif;font-size:15px;font-weight:600;
+  letter-spacing:.3px;margin-top:3px;
+}
+.wx{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--muted);text-align:right;line-height:1.5}
+
+h1.display{
+  font-family:'Fraunces',serif;
+  font-size:34px;line-height:1.1;font-weight:600;
+  letter-spacing:-.4px;margin:2px 0 4px;
+}
+.sub{font-size:13.5px;color:var(--muted);line-height:1.55;max-width:32ch}
+
+/* ============ CARDS ============ */
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px;
+  margin-top:12px;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.card.tint{border-left:3px solid var(--accent)}
+.card-lab{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+.card h2{font-family:'Fraunces',serif;font-size:21px;font-weight:600;line-height:1.2}
+.card p{font-size:13.5px;color:var(--muted);line-height:1.55;margin-top:5px}
+.row{display:flex;gap:9px;margin-top:13px}
+.btn{
+  flex:1;border:none;border-radius:11px;padding:12px 14px;
+  font-family:'DM Sans';font-weight:600;font-size:13.5px;cursor:pointer;
+  background:var(--accent);color:var(--on-accent);
+  transition:transform .12s ease;
+}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn:active{transform:scale(.975)}
+.section-lab{
+  font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:2.8px;
+  text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:10px;margin:26px 0 2px;
+}
+.section-lab::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* ============ CONSTELLATION ============ */
+.constell{
+  position:relative;height:172px;margin-top:14px;
+  border-radius:14px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(0,0,0,.16),rgba(0,0,0,.32));
+  border:1px solid var(--line);
+}
+#app.light .constell{background:linear-gradient(180deg,rgba(31,40,51,.82),rgba(31,40,51,.92))}
+.constell .star{position:absolute;border-radius:50%;}
+.constell .cap{
+  position:absolute;left:14px;bottom:11px;right:14px;
+  font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(255,255,255,.62);
+  display:flex;justify-content:space-between;
+}
+.constell .named{
+  position:absolute;font-family:'Fraunces',serif;font-size:11px;
+  color:rgba(255,255,255,.5);font-style:italic;letter-spacing:.3px;
+}
+
+/* ============ DOT GRID ============ */
+.dots{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;margin-top:14px}
+.dots i{aspect-ratio:1;border-radius:50%;background:var(--line)}
+
+/* ============ RITUAL LAUNCHER ============ */
+.rituals{display:flex;gap:9px;overflow-x:auto;margin-top:13px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.rit{
+  flex:0 0 auto;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:12px;padding:11px 14px;cursor:pointer;min-width:118px;
+  backdrop-filter:blur(8px);
+}
+.rit .rl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.rit .rn{font-family:'Fraunces',serif;font-size:15px;font-weight:600;margin-top:4px}
+.rit .rm{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ============ HOARD STRIP ============ */
+.hoard{
+  display:flex;align-items:center;gap:12px;margin-top:12px;
+  background:linear-gradient(160deg,rgba(224,180,78,.2),rgba(224,180,78,.08));
+  border:1px solid rgba(224,180,78,.45);border-radius:13px;padding:12px 15px;
+}
+.hoard .hv{font-family:'Fraunces',serif;font-size:24px;font-weight:600;line-height:1;color:var(--ink)}
+.hoard .hl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.hoard .hg{margin-left:auto;font-size:19px}
+
+/* ============ PEOPLE MONOGRAMS ============ */
+.mono-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:13px}
+.person{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:14px;display:flex;flex-direction:column;gap:9px;
+  backdrop-filter:blur(10px);
+}
+.mono{
+  width:46px;height:46px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-size:20px;font-weight:600;
+}
+.person .pn{font-family:'Fraunces',serif;font-size:16px;font-weight:600}
+.person .pd{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+/* ============ WALK CARD ============ */
+.walk{
+  margin-top:13px;border-radius:16px;padding:18px;
+  background:linear-gradient(155deg,rgba(110,158,114,.24),rgba(110,158,114,.08));
+  border:1px solid rgba(110,158,114,.4);
+}
+.walk h2{font-family:'Fraunces',serif;font-size:25px;font-weight:600;line-height:1.15}
+.walk .note{
+  margin-top:13px;background:var(--surface-2);border-radius:11px;padding:11px 13px;
+  font-size:13px;line-height:1.5;
+}
+.walk .note b{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+
+/* ============ PB ROWS ============ */
+.pb{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.pb:last-child{border-bottom:none}
+.pb .pv{font-family:'Fraunces',serif;font-size:22px;font-weight:600;min-width:46px}
+.pb .pl{flex:1}
+.pb .pn{font-size:13.5px;font-weight:500}
+.pb .ps{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+/* ============ FINANCE ICON SOCKETS ============
+   One 1254x1254 sprite sheet, 3x3 grid of 418px cells. Each icon keeps its own
+   pale ground, clipped into a rounded tile so it reads as an inlaid enamel plaque
+   against the dark vault rather than a mismatched rectangle. */
+.fi{
+  width:52px;height:52px;flex-shrink:0;border-radius:13px;
+  background-image:url('assets/fin-icons.png');
+  background-size:300% 300%;
+  background-repeat:no-repeat;
+  box-shadow:0 2px 8px rgba(0,0,0,.32), inset 0 0 0 1px rgba(255,255,255,.5);
+}
+.fi.sm{width:38px;height:38px;border-radius:10px}
+.fi.lg{width:64px;height:64px;border-radius:16px}
+.fi-wallet {background-position:0    0}
+.fi-card   {background-position:50%  0}
+.fi-car    {background-position:100% 0}
+.fi-loan   {background-position:0    50%}
+.fi-resist {background-position:50%  50%}
+.fi-piggy  {background-position:100% 50%}
+.fi-trip   {background-position:50%  100%}
+/* unearned milestone: same socket, no art, no name */
+.fi.locked{
+  background-image:none;background:rgba(255,255,255,.05);
+  border:1.5px dashed rgba(255,255,255,.22);box-shadow:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:15px;opacity:.5;
+}
+/* ============ COUNTDOWNS (top of Body, per her ask) ============ */
+.countdown{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.cd{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:12px 6px 11px;backdrop-filter:blur(10px);
+}
+.cd .cdi{font-size:22px;line-height:1.1}
+.cd .fi{margin-bottom:2px}
+.cd .cdn{font-family:'Fraunces',serif;font-size:27px;font-weight:600;line-height:1;margin-top:4px}
+.cd .cdl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);line-height:1.45;margin-top:3px}
+
+/* ============ RITUAL STEP ART ============
+   One 1254x1254 sheet, 2x2 grid of 627px cells. Each cell has a caption baked
+   into its bottom band, so we show only the top 76% and the text is cropped away.
+   Width-driven sizing keeps the crop exact at any screen size. */
+.stepart{
+  width:100%;max-width:340px;
+  height:calc(var(--aw) * 0.76);
+  --aw:min(340px, 82vw);
+  border-radius:18px;overflow:hidden;
+  background-image:url('assets/ritual-art.png');
+  background-repeat:no-repeat;
+  background-size:calc(var(--aw) * 2) auto;
+  background-position:calc(var(--aw) * -1 * var(--ac)) calc(var(--aw) * -1 * var(--ar));
+  box-shadow:0 10px 34px rgba(0,0,0,.34);
+  margin-bottom:4px;
+}
+.svgart{width:min(340px,84vw);margin-bottom:2px}
+.art-water{--ac:0;--ar:0}
+.art-meds {--ac:1;--ar:0}
+.art-move {--ac:0;--ar:1}
+.art-energy{--ac:1;--ar:1}
+
+.goal{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)}
+.goal:last-child{border-bottom:none}
+.goal .gt{flex:1;min-width:0}
+.goal .gn{font-size:14px;font-weight:500}
+.goal .gs{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.goal .gv{font-family:'Fraunces',serif;font-size:18px;font-weight:600}
+.winchips{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;margin-top:4px}
+.winchip{
+  flex:0 0 auto;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:13px;padding:10px;cursor:pointer;text-align:center;width:80px;
+}
+.winchip .wl{font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-top:7px}
+.winchip.on{border-color:var(--accent);background:rgba(224,180,78,.16)}
+.tiers{display:flex;gap:10px;overflow-x:auto;padding:2px 0 4px;margin-top:4px}
+.tier{flex:0 0 auto;width:64px;text-align:center}
+.tier .tn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:6px;line-height:1.3}
+
+/* ============ HOARD TIERS ============
+   Five stages on one 1536x1024 sheet. Their source grounds disagree (navy, green,
+   teal), so each is cropped in tight on the gold and its edges are faded with a
+   radial mask — the rectangle dissolves and only the coins remain. */
+.hoardhero{
+  position:relative;margin-top:14px;border-radius:16px;
+  aspect-ratio:4/3;
+  background-image:url('assets/hoard-tiers.png');
+  background-repeat:no-repeat;
+  background-size:260% auto;
+  -webkit-mask-image:radial-gradient(ellipse 76% 70% at 50% 52%,#000 52%,transparent 88%);
+          mask-image:radial-gradient(ellipse 76% 70% at 50% 52%,#000 52%,transparent 88%);
+}
+.hoardhero.t1{background-position:-8.5% 23.6%}
+.hoardhero.t2{background-position:44.3% 14.7%}
+.hoardhero.t3{background-position:102.8% 13%}
+.hoardhero.t4{background-position:4.5% 95.8%}
+/* the vault room is a scene, not an object — it gets full bleed and a softer fade */
+.hoardhero.t5{
+  background-position:85.75% 94.1%;background-size:200% auto;
+  -webkit-mask-image:radial-gradient(ellipse 92% 86% at 50% 50%,#000 68%,transparent 99%);
+          mask-image:radial-gradient(ellipse 92% 86% at 50% 50%,#000 68%,transparent 99%);
+}
+.tierladder{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:6px}
+.tl{
+  position:relative;aspect-ratio:1;border-radius:11px;overflow:hidden;
+  background-image:url('assets/hoard-tiers.png');background-repeat:no-repeat;
+  background-size:520% auto;
+  border:1px solid rgba(255,255,255,.14);
+}
+.tl.l1{background-position:-13% 26%}
+.tl.l2{background-position:47% 16%}
+.tl.l3{background-position:107% 14%}
+.tl.l4{background-position:7% 97%}
+.tl.l5{background-position:88% 95%}
+.tl.locked{filter:grayscale(1) brightness(.35) contrast(.8);opacity:.5}
+.tl.now{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent),0 3px 12px rgba(0,0,0,.4)}
+.tl .tlab{
+  position:absolute;left:0;right:0;bottom:0;text-align:center;
+  font-family:'DM Mono',monospace;font-size:7.5px;letter-spacing:1px;text-transform:uppercase;
+  background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;padding:8px 2px 3px;
+}
+.tl.locked .tlab{color:rgba(255,255,255,.45)}
+
+/* ============ TAB BAR ============ */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  max-width:430px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(5,1fr);
+  background:var(--ground-b);
+  border-top:1px solid var(--line);
+  padding:9px 6px calc(9px + env(safe-area-inset-bottom));
+  transition:background .8s ease;
+}
+.tab{
+  border:none;background:none;cursor:pointer;padding:6px 2px;
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--muted);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.tab .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.32}
+.tab.on{color:var(--ink)}
+.tab.on .dot{opacity:1;box-shadow:0 0 9px currentColor}
+
+/* ============ RITUAL PLAYER ============ */
+.player{
+  position:fixed;inset:0;z-index:60;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:34px 30px calc(34px + env(safe-area-inset-bottom));
+  text-align:center;
+  max-width:430px;margin:0 auto;
+}
+.player.on{display:flex}
+.player .pbg{position:absolute;inset:0;z-index:-1;transition:background .7s ease}
+/* per-step motif layer — ambient drift only, never a pulsing UI element */
+.pmotif{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.pmotif b{position:absolute;display:block}
+.pmotif b.drop{
+  border-radius:50% 50% 50% 0;transform:rotate(45deg);
+  animation:mdrop linear infinite;
+}
+@keyframes mdrop{0%{transform:translateY(-8vh) rotate(45deg);opacity:0}
+  14%{opacity:.85}86%{opacity:.85}100%{transform:translateY(104vh) rotate(45deg);opacity:0}}
+.pmotif b.ember{border-radius:50%;animation:mrise linear infinite}
+@keyframes mrise{0%{transform:translateY(12vh) scale(.7);opacity:0}
+  20%{opacity:.9}100%{transform:translateY(-102vh) scale(1.25);opacity:0}}
+.pmotif b.ring{border-radius:50%;border:1.5px solid currentColor;background:none!important;animation:mring ease-out infinite}
+@keyframes mring{0%{transform:scale(.25);opacity:.75}100%{transform:scale(2.4);opacity:0}}
+.pmotif b.pill{border-radius:99px}
+.pmotif b.star{border-radius:50%}
+.pmotif b.leaf2{border-radius:0 100% 0 100%;animation:mdrift linear infinite}
+@keyframes mdrift{0%{transform:translateY(-8vh) rotate(0)}100%{transform:translateY(104vh) rotate(300deg)}}
+.pmotif b.grain{border-radius:60% 0 60% 60%}
+.player .step-lab{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3.4px;text-transform:uppercase;opacity:.62}
+.player h2{
+  font-family:'Fraunces',serif;font-size:38px;line-height:1.12;font-weight:600;
+  margin:20px 0 12px;letter-spacing:-.5px;
+}
+.player .phint{font-size:14.5px;line-height:1.6;opacity:.72;max-width:26ch}
+.ring{position:relative;width:132px;height:132px;margin:30px 0 6px}
+.ring svg{transform:rotate(-90deg)}
+.ring .rt{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-size:31px;font-weight:600;
+}
+.player .pacts{width:100%;max-width:320px;margin-top:32px}
+.player .pbtn{
+  width:100%;border:none;border-radius:13px;padding:16px;
+  font-family:'DM Sans';font-weight:600;font-size:15px;cursor:pointer;margin-bottom:9px;
+}
+.player .skip{
+  background:none;border:none;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2.4px;
+  text-transform:uppercase;opacity:.55;padding:12px;
+}
+.player .prog{display:flex;gap:6px;justify-content:center;margin-top:22px}
+.player .prog i{width:26px;height:3px;border-radius:2px;background:currentColor;opacity:.22}
+.player .prog i.done{opacity:.85}
+
+/* ============ DEV CONTROLS ============ */
+.devbar{
+  position:fixed;top:0;left:0;right:0;z-index:90;
+  background:rgba(10,10,14,.93);backdrop-filter:blur(10px);
+  padding:7px 9px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+  font-family:'DM Mono',monospace;font-size:9.5px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.devbar.hide{transform:translateY(-100%)}
+.devbar span{color:#7B8496;letter-spacing:1.6px;text-transform:uppercase;margin-right:2px}
+.devbar button{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  color:#D7DCE6;border-radius:7px;padding:5px 9px;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.8px;
+}
+.devbar button.on{background:#E8E2F0;color:#15121C;border-color:#E8E2F0}
+.devpad{height:38px}
+#toggleDev{
+  position:fixed;top:6px;right:8px;z-index:95;
+  background:rgba(10,10,14,.85);color:#D7DCE6;border:1px solid rgba(255,255,255,.16);
+  border-radius:7px;padding:5px 9px;font-family:'DM Mono',monospace;font-size:9.5px;cursor:pointer;
+}
+.panel{display:none}
+.panel.on{display:block}
+</style>
+</head>
+<body>
+
+<div class="devbar" id="devbar">
+  <span>Season</span>
+  <button data-s="spring">Spring</button><button data-s="summer">Summer</button>
+  <button data-s="autumn">Autumn</button><button data-s="winter">Winter</button>
+  <span>Time</span>
+  <button data-t="dawn">Dawn</button><button data-t="day">Day</button>
+  <button data-t="dusk">Dusk</button><button data-t="night">Night</button>
+  <span>Wx</span>
+  <button data-rain="1">Rain</button>
+  <span>Art</span>
+  <button data-art="svg">SVG</button><button data-art="png">Your PNG</button><button data-art="none">None</button>
+</div>
+<button id="toggleDev">hide</button>
+
+<div id="app" class="light">
+  <div class="sky">
+    <div class="lightsource" id="lightsource"></div>
+    <div class="stars" id="stars"></div>
+    <div class="particles" id="particles"></div>
+    <div class="rain" id="rain"></div>
+  </div>
+
+  <div class="devpad"></div>
+
+  <div class="topbar">
+    <div>
+      <div class="eyebrow" id="dateLab">SUNDAY · SEPTEMBER 6</div>
+      <div class="roomname" id="roomLab">Today</div>
+    </div>
+    <div class="wx" id="wxLab"></div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ============ TODAY ============ -->
+    <section class="panel on" id="p-today">
+      <h1 class="display" id="greet">Good morning.</h1>
+      <div class="sub" id="greetSub">Sunrise was 6:42. You're up before you need to be.</div>
+
+      <div class="constell" id="constell">
+        <div class="cap"><span id="starCount">148 stars</span><span id="starNote">nothing ever goes out</span></div>
+      </div>
+
+      <div class="section-lab">Right now</div>
+      <div class="card tint">
+        <div class="card-lab">Low effort · People</div>
+        <h2>Text Uncle Jack</h2>
+        <p>11 days since you last reached out. Start with “thinking of you.”</p>
+        <div class="row">
+          <button class="btn">Did it</button>
+          <button class="btn ghost">Not now</button>
+        </div>
+      </div>
+
+      <div class="section-lab" id="ritLab">Rituals</div>
+      <div class="rituals" id="rituals"></div>
+
+      <div class="hoard">
+        <div>
+          <div class="hv">$1,160</div>
+          <div class="hl">Moved toward future you</div>
+        </div>
+        <div class="hg">🪙</div>
+      </div>
+
+      <div class="section-lab">Last 28 days</div>
+      <div class="dots" id="dots"></div>
+    </section>
+
+    <!-- ============ BODY ============ -->
+    <section class="panel" id="p-body" style="padding-top:2px">
+      <div class="countdown">
+        <div class="cd">
+          <div class="fi fi-trip sm"></div>
+          <div class="cdn">100</div>
+          <div class="cdl">days<br>BVI</div>
+        </div>
+        <div class="cd">
+          <div class="cdi">🏝️</div>
+          <div class="cdn">195</div>
+          <div class="cdl">days<br>Hawaii</div>
+        </div>
+        <div class="cd">
+          <div class="cdi">🔑</div>
+          <div class="cdn">176</div>
+          <div class="cdl">days<br>one home</div>
+        </div>
+      </div>
+      <h1 class="display">Nothing here<br>asks you to bounce.</h1>
+      <div class="sub">Pick a type and I'll choose one. Or just take the walk.</div>
+
+      <div class="walk">
+        <div class="card-lab">The walk</div>
+        <h2 id="walkH">Take a walk.</h2>
+        <p style="margin-top:5px">Shoes. That's the whole setup.</p>
+        <div class="note">
+          <b>While you're out</b>
+          Notice what's blooming. Count how many kinds you pass.
+        </div>
+        <div class="note" style="margin-top:8px">
+          <b>Your song</b>
+          Vitamin String Quartet — grounding ↗
+        </div>
+        <div class="row">
+          <button class="btn" style="background:#6E9E72">Back — that counts</button>
+        </div>
+      </div>
+
+      <div class="section-lab">Personal bests</div>
+      <div class="card">
+        <div class="pb"><div class="pv" style="color:#6E9E72">4</div><div class="pl"><div class="pn">Push-ups</div><div class="ps">Best · Sep 4 · up from 2</div></div></div>
+        <div class="pb"><div class="pv" style="color:#6E9E72">52</div><div class="pl"><div class="pn">Plank hold</div><div class="ps">Seconds · Aug 29</div></div></div>
+        <div class="pb"><div class="pv" style="opacity:.35">—</div><div class="pl"><div class="pn">Longest walk</div><div class="ps">No record yet</div></div></div>
+      </div>
+
+    </section>
+
+    <!-- ============ PEOPLE ============ -->
+    <section class="panel" id="p-people">
+      <h1 class="display">The ones worth<br>keeping close.</h1>
+      <div class="sub">Warmth fades, it doesn't go red. Tap when you reach out.</div>
+      <div class="mono-grid" id="people"></div>
+    </section>
+
+    <!-- ============ VAULT ============ -->
+    <section class="panel" id="p-vault">
+      <div class="eyebrow" style="margin-bottom:4px">Lifetime moved toward future you</div>
+      <h1 class="display" style="font-size:46px">$1,160</h1>
+      <div class="sub">This number cannot go down — not even if you have to raid the savings. It counts what you <i>moved</i>, not what you're holding.</div>
+      <div class="hoardhero t2" id="hoardHero"></div>
+      <div class="tierladder">
+        <div class="tl l1"><div class="tlab">Sprout</div></div>
+        <div class="tl l2 now"><div class="tlab">Stacking</div></div>
+        <div class="tl l3 locked"><div class="tlab">—</div></div>
+        <div class="tl l4 locked"><div class="tlab">—</div></div>
+        <div class="tl l5 locked"><div class="tlab">—</div></div>
+      </div>
+      <div class="eyebrow" style="text-align:center;margin-top:9px">Stage 2 of 5 · the next one has no name yet</div>
+
+      <div class="section-lab">Log a win</div>
+      <div class="card">
+        <p style="margin:0 0 12px">Moving $20 counts. So does closing a $60 cart without buying — money kept is money moved.</p>
+        <div class="winchips">
+          <div class="winchip on"><div class="fi fi-piggy sm" style="margin:0 auto"></div><div class="wl">Savings</div></div>
+          <div class="winchip"><div class="fi fi-resist sm" style="margin:0 auto"></div><div class="wl">Resisted</div></div>
+          <div class="winchip"><div class="fi fi-card sm" style="margin:0 auto"></div><div class="wl">Card</div></div>
+          <div class="winchip"><div class="fi fi-car sm" style="margin:0 auto"></div><div class="wl">Car</div></div>
+          <div class="winchip"><div class="fi fi-loan sm" style="margin:0 auto"></div><div class="wl">Loans</div></div>
+          <div class="winchip"><div class="fi fi-trip sm" style="margin:0 auto"></div><div class="wl">Trip fund</div></div>
+        </div>
+      </div>
+
+      <div class="section-lab">Where it's going</div>
+      <div class="card">
+        <div class="goal"><div class="fi fi-card"></div><div class="gt"><div class="gn">Credit card</div><div class="gs">Highest interest · gets the extra first</div></div><div class="gv">$0</div></div>
+        <div class="goal"><div class="fi fi-piggy"></div><div class="gt"><div class="gn">Ally savings</div><div class="gs">$500 every payday, automatic</div></div><div class="gv">$10.4k</div></div>
+        <div class="goal"><div class="fi fi-car"></div><div class="gt"><div class="gn">The Buick</div><div class="gs">6.30% · +$200/mo saves ~2 years</div></div><div class="gv">$34.9k</div></div>
+        <div class="goal"><div class="fi fi-loan"></div><div class="gt"><div class="gn">Student loans</div><div class="gs">Refinance target · SoFi, Earnest</div></div><div class="gv">$80k</div></div>
+        <div class="goal"><div class="fi fi-trip"></div><div class="gt"><div class="gn">Trip fund</div><div class="gs">Tropical · 100 days out</div></div><div class="gv">—</div></div>
+      </div>
+
+      <div class="section-lab">Payday</div>
+      <div class="card tint">
+        <div class="card-lab">Friday, September 11 · in 5 days</div>
+        <div style="display:flex;align-items:center;gap:13px;margin-top:4px">
+          <div class="fi fi-wallet lg"></div>
+          <div><h2 style="font-size:19px">Four things, two minutes.</h2><p style="margin-top:3px">The coins drop as you confirm each one.</p></div>
+        </div>
+        <div class="row"><button class="btn" onclick="openRitual('payday')">Start the payday ritual</button></div>
+      </div>
+
+      <div class="section-lab">The case</div>
+      <div class="card">
+        <div class="tiers">
+          <div class="tier"><div class="fi fi-wallet" style="margin:0 auto"></div><div class="tn">First<br>Thousand</div></div>
+          <div class="tier"><div class="fi locked" style="margin:0 auto">?</div><div class="tn">—</div></div>
+          <div class="tier"><div class="fi locked" style="margin:0 auto">?</div><div class="tn">—</div></div>
+          <div class="tier"><div class="fi locked" style="margin:0 auto">?</div><div class="tn">—</div></div>
+          <div class="tier"><div class="fi locked" style="margin:0 auto">?</div><div class="tn">—</div></div>
+          <div class="tier"><div class="fi locked" style="margin:0 auto">?</div><div class="tn">—</div></div>
+        </div>
+        <p style="margin-top:10px">One found. No names on the others until they're yours.</p>
+      </div>
+    </section>
+
+    <!-- ============ MIND ============ -->
+    <section class="panel" id="p-mind">
+      <h1 class="display">Somewhere<br>to put it.</h1>
+      <div class="sub">Three things queued. No streak, no due dates, no guilt.</div>
+      <div class="card tint" style="border-left-color:#B98AD9">
+        <div class="card-lab" style="color:#B98AD9">On this day · 94 days ago</div>
+        <h2 style="font-style:italic;font-size:19px">“Stop apologizing for needing to rest.”</h2>
+        <p>You wrote this on June 4. You'd had four low days in a row.</p>
+      </div>
+      <div class="section-lab">Queue</div>
+      <div class="card"><h2 style="font-size:17px">Eval design for the buyer toolkit</h2><p>Saved Aug 28 · ~20 min</p></div>
+      <div class="card"><h2 style="font-size:17px">NIST AI RMF — the short version</h2><p>Saved Sep 1 · ~10 min</p></div>
+    </section>
+
+  </div>
+</div>
+
+<div class="tabbar" id="tabbar"></div>
+
+<div class="player" id="player">
+  <div class="pbg" id="pbg"></div>
+  <div class="pmotif" id="pmotif"></div>
+  <div id="stepArt"></div>
+  <div class="step-lab" id="stepLab">STEP 1 OF 4</div>
+  <h2 id="stepTitle">Take your meds.</h2>
+  <div class="phint" id="stepHint">The one that's already automatic. Confirm and move on.</div>
+  <div class="ring" id="ring" style="display:none">
+    <svg width="132" height="132">
+      <circle cx="66" cy="66" r="59" fill="none" stroke="currentColor" stroke-opacity=".16" stroke-width="5"/>
+      <circle id="ringFill" cx="66" cy="66" r="59" fill="none" stroke="currentColor" stroke-width="5"
+              stroke-linecap="round" stroke-dasharray="370.7" stroke-dashoffset="0"/>
+    </svg>
+    <div class="rt" id="ringTime">1:00</div>
+  </div>
+  <div class="pacts">
+    <button class="pbtn" id="stepGo">Done</button>
+    <button class="skip" id="stepSkip">skip this one</button>
+  </div>
+  <div class="prog" id="prog"></div>
+</div>
+
+<script>
+/* ============================================================
+   PALETTES — season sets the hue family, time sets the lightness
+   ============================================================ */
+/* Every season is a TWO-HUE gradient so it can't be mistaken for another one.
+   Spring: green into blossom pink. Summer: sky into sand. Autumn: gold into rust.
+   Winter: white into ice blue. Day grounds are saturated, not near-white. */
+const SKY = {
+  spring:{
+    dawn :{a:'#FFE0EC',b:'#FFF4D6',ink:'#4A2434',light:1,accent:'#DB5F8C',glow:'rgba(255,190,215,.6)'},
+    day  :{a:'#E2F5D4',b:'#FCD9E8',ink:'#2E4227',light:1,accent:'#DB5F8C',glow:'rgba(255,255,255,.55)'},
+    dusk :{a:'#4E2647',b:'#B96A8E',ink:'#FFEAF2',light:0,accent:'#FFB3CE',glow:'rgba(255,170,205,.45)'},
+    night:{a:'#0F1A22',b:'#1B3040',ink:'#E4F2EC',light:0,accent:'#8FD9A8',glow:'rgba(150,220,180,.26)'}
+  },
+  summer:{
+    dawn :{a:'#FFE9BC',b:'#FFCFA0',ink:'#4A2E14',light:1,accent:'#F2792B',glow:'rgba(255,205,130,.68)'},
+    day  :{a:'#CFEDFB',b:'#FFF0CC',ink:'#124254',light:1,accent:'#F2792B',glow:'rgba(255,248,210,.85)'},
+    dusk :{a:'#5E1638',b:'#FF7A4D',ink:'#FFF0E4',light:0,accent:'#FFD36B',glow:'rgba(255,150,90,.55)'},
+    night:{a:'#04141F',b:'#0B2E42',ink:'#DFF4FA',light:0,accent:'#4FD8C4',glow:'rgba(90,225,210,.26)'}
+  },
+  autumn:{  /* her favorite — richest of the four */
+    dawn :{a:'#FFD9A8',b:'#F7A870',ink:'#43200C',light:1,accent:'#C4381A',glow:'rgba(255,180,110,.66)'},
+    day  :{a:'#FFDC9E',b:'#F0A05A',ink:'#42200E',light:1,accent:'#B32E12',glow:'rgba(255,225,160,.6)'},
+    dusk :{a:'#3E0F0A',b:'#D14A16',ink:'#FFE8D2',light:0,accent:'#FFB04A',glow:'rgba(255,130,50,.55)'},
+    night:{a:'#150A05',b:'#33170A',ink:'#FCE4C4',light:0,accent:'#F0952E',glow:'rgba(240,150,60,.26)'}
+  },
+  winter:{
+    dawn :{a:'#E4EDFA',b:'#FBE6EE',ink:'#22354C',light:1,accent:'#3E7FB8',glow:'rgba(230,242,255,.72)'},
+    day  :{a:'#F4FCFF',b:'#CFE4F5',ink:'#183048',light:1,accent:'#2E77AE',glow:'rgba(255,255,255,.92)'},
+    dusk :{a:'#1E2540',b:'#5A6494',ink:'#EEF2FC',light:0,accent:'#A8BEEC',glow:'rgba(170,190,240,.42)'},
+    night:{a:'#04070F',b:'#0E1A30',ink:'#E4EEFC',light:0,accent:'#9FD4F5',glow:'rgba(180,215,250,.26)'}
+  }
+};
+
+/* a room owns its accent + tint; season/time owns the ground */
+const ROOMS = {
+  today :{label:'Today',  accent:null,      tint:null},
+  body  :{label:'Body',   accent:'#6E9E72', tint:'110,158,114'},
+  people:{label:'People', accent:'#D98A72', tint:'217,138,114'},
+  vault :{label:'Vault',  accent:'#E0B44E', tint:'224,180,78'},
+  mind  :{label:'Mind',   accent:'#B98AD9', tint:'185,138,217'}
+};
+const DOMAIN = {money:'#E0B44E',body:'#6E9E72',people:'#D98A72',home:'#7A9EC4',growth:'#B98AD9'};
+
+let season='autumn', tod='day', room='today', raining=false;
+
+/* deterministic pseudo-random so nothing jitters between renders */
+function rnd(i){return Math.abs(Math.sin(i*12.9898)*43758.5453)%1;}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function applyTheme(){
+  const s=SKY[season][tod], r=ROOMS[room], app=document.getElementById('app');
+  const isLight=!!s.light;
+  const accent=r.accent||s.accent;
+
+  app.classList.toggle('light',isLight);
+  app.style.setProperty('--ground-a',s.a);
+  app.style.setProperty('--ground-b',s.b);
+  app.style.setProperty('--ink',s.ink);
+  app.style.setProperty('--accent',accent);
+  app.style.setProperty('--glow',s.glow);
+  app.style.setProperty('--on-accent',isLight?'#fff':'#12101a');
+  app.style.setProperty('--muted',isLight?'rgba(0,0,0,.52)':'rgba(255,255,255,.6)');
+  app.style.setProperty('--line',isLight?'rgba(0,0,0,.12)':'rgba(255,255,255,.14)');
+
+  /* surfaces = base translucency + the room's own tint */
+  const base=isLight?'255,255,255':'255,255,255';
+  const a1=isLight?.72:.07, a2=isLight?.5:.045;
+  if(r.tint){
+    app.style.setProperty('--surface',`linear-gradient(160deg,rgba(${r.tint},${isLight?.16:.14}),rgba(${base},${a1}))`);
+    app.style.setProperty('--surface-2',`rgba(${r.tint},${isLight?.1:.09})`);
+  }else{
+    app.style.setProperty('--surface',`rgba(${base},${a1})`);
+    app.style.setProperty('--surface-2',`rgba(${base},${a2})`);
+  }
+
+  /* light source: sun high at day, low + warm at dawn/dusk, moon at night */
+  const ls=document.getElementById('lightsource');
+  const conf={
+    dawn :{size:210,top:'8%',right:'-14%',c:s.glow},
+    day  :{size:270,top:'-12%',right:'-18%',c:s.glow},
+    dusk :{size:230,top:'12%',right:'-16%',c:s.glow},
+    night:{size:104,top:'5%',right:'12%',c:s.glow}
+  }[tod];
+  /* summer rides high and huge; autumn sits low and warm; winter is a pale thin disc */
+  const seasonSun={summer:{m:1.28,dy:-6},autumn:{m:1.1,dy:9},spring:{m:1,dy:0},winter:{m:.82,dy:4}}[season];
+  if(tod!=='night'){
+    conf.size=Math.round(conf.size*seasonSun.m);
+    conf.top=`calc(${conf.top} + ${seasonSun.dy}%)`;
+  }
+  ls.style.width=ls.style.height=conf.size+'px';
+  ls.style.top=conf.top; ls.style.right=conf.right;
+  ls.style.background=tod==='night'
+    ? `radial-gradient(circle at 38% 34%, ${s.ink} 0 42%, transparent 44%), radial-gradient(circle, ${conf.c}, transparent 72%)`
+    : `radial-gradient(circle, ${conf.c} 0%, transparent 70%)`;
+  ls.style.filter=tod==='night'?'blur(0.4px)':'blur(3px)';
+
+  document.getElementById('stars').classList.toggle('on',!isLight);
+  document.getElementById('roomLab').textContent=r.label;
+  buildParticles();
+  paintTabs();
+  renderTodayCopy();
+  document.getElementById('wxLab').innerHTML =
+    (raining?'RAIN · 52°F':'CLEAR · 61°F')+'<br>'+
+    (tod==='night'?'DARK SINCE 4:51':'SUNSET 7:28');
+}
+
+/* ============================================================
+   SKY DECOR
+   ============================================================ */
+function buildStars(){
+  const el=document.getElementById('stars');let h='';
+  for(let i=0;i<58;i++){
+    const o=(rnd(i)*.65+.2).toFixed(2), sz=rnd(i*3)<.16?2.5:1.5;
+    h+=`<i style="left:${(rnd(i*7)*100).toFixed(1)}%;top:${(rnd(i*11)*46).toFixed(1)}%;opacity:${o};width:${sz}px;height:${sz}px"></i>`;
+  }
+  el.innerHTML=h;
+}
+/* Each season gets its own shape, palette and density — the motif has to be
+   recognizable at a glance, not a generic dot in a different color. */
+function buildParticles(){
+  const el=document.getElementById('particles');
+  const night=!SKY[season][tod].light;
+  const spec={
+    spring:{n:30,sz:9, cls:'petal', cols:['#F49AC1','#FFC2DA','#E8779B','#A8D98E'], op:[.3,.55], rot:1},
+    summer:{n:22,sz:7, cls:'spark', cols:['#FFD86B','#FFF0B8','#7FE3DC','#FFB05B'], op:[.35,.6], rot:0},
+    autumn:{n:34,sz:11,cls:'leaf',  cols:['#E8641C','#C4281A','#F0A82E','#8E3B12','#F5C842'], op:[.35,.7], rot:1},
+    winter:{n:44,sz:5, cls:'snow',  cols:['#FFFFFF','#DCEEFF','#B8DCF7'], op:[.4,.85], rot:0}
+  }[season];
+  let h='';
+  for(let i=0;i<spec.n;i++){
+    const s=(spec.sz*(0.5+rnd(i*5)*0.9)).toFixed(1);
+    const c=spec.cols[Math.floor(rnd(i*71)*spec.cols.length)];
+    const op=(spec.op[0]+rnd(i*19)*(spec.op[1]-spec.op[0]))*(night?0.7:1);
+    const rot=spec.rot?`transform:rotate(${(rnd(i*23)*360).toFixed(0)}deg);`:'';
+    h+=`<span class="${spec.cls}" style="left:${(rnd(i*13)*99).toFixed(1)}%;top:${(rnd(i*17)*90+3).toFixed(1)}%;`
+      +`width:${s}px;height:${s}px;background:${c};opacity:${op.toFixed(2)};${rot}"></span>`;
+  }
+  el.innerHTML=h;
+}
+function buildRain(){
+  const el=document.getElementById('rain');let h='';
+  for(let i=0;i<34;i++){
+    h+=`<i style="left:${(rnd(i*23)*100).toFixed(1)}%;animation-duration:${(0.75+rnd(i*29)*0.7).toFixed(2)}s;animation-delay:-${(rnd(i*31)*1.4).toFixed(2)}s"></i>`;
+  }
+  el.innerHTML=h;
+}
+
+/* ============================================================
+   CONSTELLATION — every completed thing is a permanent star
+   ============================================================ */
+function buildConstellation(){
+  const el=document.getElementById('constell');
+  el.querySelectorAll('.star,.named').forEach(n=>n.remove());
+  const keys=Object.keys(DOMAIN);
+  let h='';
+  for(let i=0;i<148;i++){
+    const c=DOMAIN[keys[Math.floor(rnd(i*37)*keys.length)]];
+    const big=rnd(i*41)<.1;
+    const sz=big?4.5:(rnd(i*43)<.4?3:2);
+    h+=`<div class="star" style="left:${(4+rnd(i*47)*92).toFixed(1)}%;top:${(8+rnd(i*53)*74).toFixed(1)}%;`
+      +`width:${sz}px;height:${sz}px;background:${c};opacity:${(0.45+rnd(i*59)*0.55).toFixed(2)};`
+      +`box-shadow:0 0 ${big?9:5}px ${c}`+`"></div>`;
+  }
+  h+=`<div class="named" style="left:20%;top:22%">the long spring</div>`;
+  h+=`<div class="named" style="left:58%;top:58%">payday</div>`;
+  el.insertAdjacentHTML('afterbegin',h);
+}
+
+/* ============================================================
+   TODAY COPY — time-aware, and tonight mode hides demands
+   ============================================================ */
+const COPY={
+  dawn :{g:'Good morning.',   s:'Sunrise was 6:42. You are up before you need to be.'},
+  day  :{g:'Afternoon.',      s:'Four hours of light left. Enough for one real thing.'},
+  dusk :{g:'Evening.',        s:'The day is closing. Nothing else has to happen today.'},
+  night:{g:'It is late.',     s:'Nothing is being asked of you now. Wind-down only.'}
+};
+/* Every step is its own little world: c1/c2 ground, ink, accent, and a motif.
+   Hydration is blue with falling drops; burning the day is fire with rising embers. */
+const W={
+  meds  :{c1:'#3A1A2A',c2:'#8E4A66',ink:'#FFE8F0',ac:'#FFB3CE',mo:'pill',  mc:'#FFD9E6',n:16},
+  water :{c1:'#08334D',c2:'#2E86B0',ink:'#E4F6FF',ac:'#7FD8FF',mo:'drop',  mc:'#9FE4FF',n:26},
+  plate :{c1:'#4A3208',c2:'#C4922E',ink:'#FFF4DC',ac:'#FFD980',mo:'ring',  mc:'#FFE0A0',n:7},
+  energy:{c1:'#2A1848',c2:'#6E4A9E',ink:'#F0E6FF',ac:'#C4A0FF',mo:'star',  mc:'#DCC8FF',n:34},
+  steel :{c1:'#141C24',c2:'#3E5560',ink:'#E4EEF4',ac:'#9FC4D4',mo:'star',  mc:'#B8D4E0',n:14},
+  fire  :{c1:'#2E0A04',c2:'#C4400F',ink:'#FFE4D0',ac:'#FFA34A',mo:'ember', mc:'#FFB05B',n:30},
+  grain :{c1:'#3A2808',c2:'#A8822E',ink:'#FFF6DC',ac:'#FFDE8A',mo:'grain', mc:'#FFE8A8',n:22},
+  sage  :{c1:'#0E2416',c2:'#3E7A4E',ink:'#E4F7E8',ac:'#8FE0A4',mo:'leaf2', mc:'#A8E8BC',n:20},
+  night :{c1:'#080B16',c2:'#1E2648',ink:'#E4EAFC',ac:'#A8BEEC',mo:'star',  mc:'#D0DCFF',n:46},
+  gold  :{c1:'#2E1E08',c2:'#8E6820',ink:'#FFF0D0',ac:'#F0C060',mo:'ring',  mc:'#FFD98A',n:6}
+};
+const RITUALS={
+  morning:{n:'Morning',  m:'4 steps · 3 min',steps:[
+    {t:'Take your meds.',h:'The one that is already automatic. Confirm and move on.',sec:0,w:'meds',art:'meds',svg:'pills'},
+    {t:'Drink a full glass of water.',h:'All of it, before you put the glass back down.',sec:40,w:'water',art:'water',svg:'glass'},
+    {t:'Two minutes on the plate.',h:'Stand still. That is the entire ask.',sec:120,w:'plate',art:'move',svg:'rings'},
+    {t:'How much gas do you have?',h:'Pick honestly, not hopefully.',sec:0,w:'energy',art:'energy',svg:'gauge'}]},
+  commute:{n:'Commute',  m:'3 steps · 4 min',steps:[
+    {t:'Work stays in the car.',h:'Say it out loud if you can. Then take fifteen slow seconds.',sec:15,w:'steel'},
+    {t:'Burn the day.',h:'Name the worst thing out loud. Watch it go up as smoke.',sec:60,w:'fire'},
+    {t:'Three words of gratitude.',h:'Small ones count. Especially the small ones.',sec:30,w:'grain'}]},
+  evening:{n:'Evening',  m:'3 steps · 2 min',steps:[
+    {t:'How did your body feel?',h:'Energy, head, gut. Ten seconds.',sec:0,w:'sage'},
+    {t:'One thing for tomorrow.',h:'Only one. Tomorrow-you will thank you.',sec:0,w:'night'},
+    {t:'Close the day.',h:'That is it. Put the phone down.',sec:0,w:'night'}]},
+  movement:{n:'Movement',m:'3 steps · 12 min',steps:[
+    {t:'What kind of movement?',h:'Walk, stretch, somatic, strength. Nothing bouncy unless you ask for it.',sec:0,w:'sage'},
+    {t:'Press play.',h:'Twelve minutes. You can stop at four and it still counts.',sec:0,w:'sage'},
+    {t:'Beat anything?',h:'Only tell me if you did. Otherwise skip this.',sec:0,w:'gold'}]},
+  payday:{n:'Payday',    m:'4 steps · 2 min',steps:[
+    {t:'$500 to Ally.',h:'Confirm the automation fired.',sec:0,w:'gold'},
+    {t:'Check the $1,500 buffer.',h:'This one is just a look.',sec:0,w:'steel'},
+    {t:'Extra onto the card.',h:'Whatever you can. Twenty dollars is a real number.',sec:0,w:'fire'},
+    {t:'Watch the coins drop.',h:'That pile cannot go back down. Not ever.',sec:0,w:'gold'}]}
+};
+function renderTodayCopy(){
+  const c=COPY[tod];
+  document.getElementById('greet').textContent=c.g;
+  document.getElementById('greetSub').textContent=c.s;
+
+  /* TONIGHT MODE — after dusk the app stops asking for things */
+  const quiet=(tod==='night');
+  document.querySelector('#p-today .card.tint').style.display=quiet?'none':'';
+  document.querySelectorAll('#p-today .section-lab')[1].textContent=quiet?'Wind-down':'Rituals';
+  document.querySelectorAll('#p-today .section-lab')[0].style.display=quiet?'none':'';
+
+  const set=quiet?['evening','movement']:['morning','commute','evening','movement','payday'];
+  document.getElementById('rituals').innerHTML=set.map(k=>{
+    const r=RITUALS[k];
+    return `<div class="rit" onclick="openRitual('${k}')"><div class="rl">Ritual</div>`
+      +`<div class="rn">${r.n}</div><div class="rm">${r.m}</div></div>`;
+  }).join('');
+}
+
+/* ============================================================
+   FILLERS
+   ============================================================ */
+function buildDots(){
+  const keys=Object.keys(DOMAIN);let h='';
+  for(let i=0;i<28;i++){
+    if(rnd(i*61)<.24){h+='<i></i>';continue;}
+    const c=DOMAIN[keys[Math.floor(rnd(i*67)*keys.length)]];
+    h+=`<i style="background:${c};box-shadow:0 0 7px ${c}88"></i>`;
+  }
+  document.getElementById('dots').innerHTML=h;
+}
+function buildPeople(){
+  const p=[['Dina','date night',2,'people'],['Uncle Jack','call',11,'people'],
+           ['Mom','check in',5,'people'],['Amanda','overdue',19,'people']];
+  document.getElementById('people').innerHTML=p.map(([n,l,d])=>{
+    const warm=Math.max(.14,1-d/24);
+    return `<div class="person"><div class="mono" style="background:rgba(217,138,114,${warm.toFixed(2)});color:${warm>.5?'#3A1A12':'inherit'}">${n[0]}</div>`
+      +`<div><div class="pn">${n}</div><div class="pd">${d} days · ${l}</div></div></div>`;
+  }).join('');
+}
+function paintTabs(){
+  document.getElementById('tabbar').innerHTML=Object.keys(ROOMS).map(k=>
+    `<button class="tab ${k===room?'on':''}" onclick="go('${k}')" style="${ROOMS[k].accent?`--c:${ROOMS[k].accent}`:''}">`
+    +`<span class="dot" style="${ROOMS[k].accent?`color:${ROOMS[k].accent}`:''}"></span>${ROOMS[k].label}</button>`).join('');
+}
+function go(k){
+  room=k;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+k).classList.add('on');
+  applyTheme();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ============================================================
+   RITUAL PLAYER — it waits, everything is skippable, it ends
+   ============================================================ */
+/* ============================================================
+   SVG STEP ART — hand-drawn vector in the soft/rounded register.
+   Takes the step world's own colors, so it reseasons itself and
+   costs ~2KB instead of 1.9MB. No baked captions to crop.
+   ============================================================ */
+/* Cartoon register to match the money art: dark outlines, saturated flat fills,
+   one glossy highlight per object, small four-point sparkles. OL = outline color. */
+const OL='#1E1428';
+const SVG={
+  glass:(w)=>`<svg viewBox="0 0 200 150" width="100%" height="100%" stroke-linejoin="round">
+    <defs>
+      <linearGradient id="gw" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${w.mc}" stop-opacity=".7"/>
+        <stop offset="1" stop-color="${w.ac}"/></linearGradient>
+    </defs>
+    <ellipse cx="100" cy="134" rx="60" ry="8" fill="${OL}" opacity=".3"/>
+    <path d="M68 42h64l-7 78a10 10 0 0 1-10 9H85a10 10 0 0 1-10-9z" fill="url(#gw)" stroke="${OL}" stroke-width="3.4"/>
+    <path d="M70.6 62h58.8l-5.5 58a10 10 0 0 1-10 9H86.1a10 10 0 0 1-10-9z" fill="${w.ac}" opacity=".55"/>
+    <ellipse cx="100" cy="62" rx="29.6" ry="5.6" fill="${w.mc}" stroke="${OL}" stroke-width="2.6"/>
+    <path d="M79 74c-2 14-2 30 0 44" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".5" fill="none"/>
+    <circle cx="88" cy="90" r="12" fill="#FFC93C" stroke="${OL}" stroke-width="2.6"/>
+    <path d="M88 78v24M76 90h24" stroke="${OL}" stroke-width="1.8" opacity=".55"/>
+    <circle cx="114" cy="106" r="10" fill="#FF7E92" stroke="${OL}" stroke-width="2.6"/>
+    <path d="M114 96v20M104 106h20" stroke="${OL}" stroke-width="1.6" opacity=".5"/>
+    <g fill="${w.mc}" stroke="${OL}" stroke-width="2.4">
+      <path d="M152 38c4.5 7 6.5 10 6.5 13a6.5 6.5 0 0 1-13 0c0-3 2-6 6.5-13z"/>
+      <path d="M43 56c3.4 5.5 5 8 5 10.5a5 5 0 0 1-10 0c0-2.5 1.6-5 5-10.5z"/></g>
+    <g fill="#5FC77E" stroke="${OL}" stroke-width="2.6">
+      <path d="M47 119c-11-4-17-15-15-26 11-1 22 7 24 18z"/>
+      <path d="M159 123c10-4 15-14 13-24-10-1-20 7-22 17z"/></g>
+    <g fill="#FFE07A"><path d="M172 44l3-8 3 8 8 3-8 3-3 8-3-8-8-3z"/>
+      <path d="M28 96l2.4-6 2.4 6 6 2.4-6 2.4-2.4 6-2.4-6-6-2.4z"/></g>
+  </svg>`,
+  gauge:(w)=>`<svg viewBox="0 0 200 150" width="100%" height="100%" stroke-linejoin="round">
+    <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5B8FE0"/><stop offset=".34" stop-color="#5FC77E"/>
+      <stop offset=".64" stop-color="#FFC93C"/><stop offset="1" stop-color="#F2662B"/></linearGradient></defs>
+    <path d="M32 118a68 68 0 0 1 136 0" fill="none" stroke="${OL}" stroke-width="27" stroke-linecap="round"/>
+    <path d="M32 118a68 68 0 0 1 136 0" fill="none" stroke="url(#gg)" stroke-width="19" stroke-linecap="round"/>
+    <path d="M44 106a56 56 0 0 1 26-38" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".4"/>
+    <g stroke="${OL}" stroke-width="2.6" stroke-linecap="round">
+      <path d="M53 87l6 6"/><path d="M100 62v9"/><path d="M147 87l-6 6"/></g>
+    <path d="M100 118L139 87" stroke="${OL}" stroke-width="7.5" stroke-linecap="round"/>
+    <circle cx="100" cy="118" r="12" fill="${w.mc}" stroke="${OL}" stroke-width="3"/>
+    <circle cx="96.5" cy="114.5" r="3.4" fill="#fff" opacity=".75"/>
+    <circle cx="42" cy="64" r="10" fill="#7FB2F0" stroke="${OL}" stroke-width="2.6"/>
+    <g stroke="${OL}" stroke-width="2.4" stroke-linecap="round">
+      <path d="M42 51v-6M29 64h-6M32.5 54.5l-4-4"/></g>
+    <path d="M161 48a11 11 0 1 0 9 17 13 13 0 0 1-9-17z" fill="#FFD95C" stroke="${OL}" stroke-width="2.6"/>
+    <g fill="#FFE07A" stroke="${OL}" stroke-width="1.6">
+      <path d="M176 92l2.6-7 2.6 7 7 2.6-7 2.6-2.6 7-2.6-7-7-2.6z"/>
+      <path d="M22 98l2.2-6 2.2 6 6 2.2-6 2.2-2.2 6-2.2-6-6-2.2z"/></g>
+  </svg>`,
+  pills:(w)=>`<svg viewBox="0 0 200 150" width="100%" height="100%" stroke-linejoin="round">
+    <ellipse cx="100" cy="130" rx="64" ry="8" fill="${OL}" opacity=".3"/>
+    <rect x="34" y="50" width="132" height="68" rx="13" fill="${w.mc}" stroke="${OL}" stroke-width="3.4"/>
+    <path d="M34 63a13 13 0 0 1 13-13h106a13 13 0 0 1 13 13z" fill="${w.ac}" opacity=".6"/>
+    <path d="M34 63h132" stroke="${OL}" stroke-width="2.6"/>
+    <g fill="${OL}" opacity=".2">
+      ${[0,1,2,3,4,5,6].map(i=>`<rect x="${42+i*17}" y="76" width="13" height="30" rx="5"/>`).join('')}
+    </g>
+    <g stroke="${OL}" stroke-width="2.2">
+      <rect x="43" y="80" width="11" height="13" rx="5.5" fill="#FF7E92"/>
+      <rect x="60" y="80" width="11" height="13" rx="5.5" fill="#5FC77E"/>
+      <rect x="77" y="80" width="11" height="13" rx="5.5" fill="#FFC93C"/>
+      <rect x="94" y="80" width="11" height="13" rx="5.5" fill="#7FB2F0"/>
+      <rect x="111" y="80" width="11" height="13" rx="5.5" fill="#B98AD9"/>
+    </g>
+    <path d="M44 56h100" stroke="#fff" stroke-width="3.4" stroke-linecap="round" opacity=".45"/>
+    <g fill="#5FC77E" stroke="${OL}" stroke-width="2.6">
+      <path d="M27 117c-11-4-17-16-15-27 11-1 22 8 24 19z"/>
+      <path d="M173 119c10-4 16-15 14-25-10-1-20 8-22 18z"/></g>
+    <g fill="#FFE07A" stroke="${OL}" stroke-width="1.6">
+      <path d="M176 34l2.6-7 2.6 7 7 2.6-7 2.6-2.6 7-2.6-7-7-2.6z"/></g>
+  </svg>`,
+  rings:(w)=>`<svg viewBox="0 0 200 150" width="100%" height="100%" stroke-linejoin="round">
+    <ellipse cx="100" cy="126" rx="70" ry="10" fill="${OL}" opacity=".28"/>
+    <g fill="none" stroke="${w.ac}" stroke-linecap="round">
+      <ellipse cx="100" cy="112" rx="32" ry="9" stroke-width="5"/>
+      <ellipse cx="100" cy="112" rx="48" ry="14" stroke-width="3.6" opacity=".62"/>
+      <ellipse cx="100" cy="112" rx="64" ry="19" stroke-width="2.8" opacity=".34"/>
+      <ellipse cx="100" cy="112" rx="80" ry="24" stroke-width="2.2" opacity=".16"/></g>
+    <rect x="64" y="94" width="72" height="18" rx="9" fill="${w.mc}" stroke="${OL}" stroke-width="3.2"/>
+    <rect x="70" y="98" width="26" height="4" rx="2" fill="#fff" opacity=".5"/>
+    <rect x="79" y="56" width="13" height="40" rx="6.5" fill="${w.mc}" stroke="${OL}" stroke-width="3"/>
+    <rect x="108" y="56" width="13" height="40" rx="6.5" fill="${w.mc}" stroke="${OL}" stroke-width="3"/>
+    <g stroke="${OL}" stroke-width="3.4" stroke-linecap="round" fill="none" opacity=".75">
+      <path d="M50 74c6-4 6-12 0-16"/><path d="M37 81c11-8 11-24 0-31"/>
+      <path d="M150 74c-6-4-6-12 0-16"/><path d="M163 81c-11-8-11-24 0-31"/></g>
+  </svg>`
+};
+
+let R=null,ri=0,timer=null,left=0,artMode='svg';
+function openRitual(key){
+  R=RITUALS[key];ri=0;
+  document.getElementById('player').classList.add('on');
+  drawStep();
+}
+/* paint the step's world: ground, ink, and its own drifting motif */
+function paintWorld(w){
+  const p=document.getElementById('player');
+  document.getElementById('pbg').style.background=
+    `radial-gradient(120% 80% at 50% -10%, ${w.c2} 0%, ${w.c1} 78%)`;
+  p.style.color=w.ink;
+  let h='';
+  for(let i=0;i<w.n;i++){
+    const sz=(w.mo==='ring'?46:w.mo==='star'?2.4:w.mo==='pill'?11:8)*(0.6+rnd(i*7)*0.9);
+    const dur=w.mo==='ring'?(3.4+rnd(i*3)*2.4):(w.mo==='ember'?(4.5+rnd(i*3)*3.5):(5.5+rnd(i*3)*4));
+    const anim=(w.mo==='drop'||w.mo==='ember'||w.mo==='ring'||w.mo==='leaf2')
+      ? `animation-duration:${dur.toFixed(2)}s;animation-delay:-${(rnd(i*11)*dur).toFixed(2)}s;` : '';
+    const top=(w.mo==='drop'||w.mo==='leaf2')?0:(w.mo==='ember'?0:rnd(i*17)*92+2);
+    h+=`<b class="${w.mo}" style="left:${(rnd(i*13)*97).toFixed(1)}%;top:${top?top.toFixed(1)+'%':'0'};`
+      +`width:${sz.toFixed(1)}px;height:${(w.mo==='pill'?sz*0.5:sz).toFixed(1)}px;`
+      +`background:${w.mc};color:${w.mc};opacity:${(0.2+rnd(i*19)*0.5).toFixed(2)};${anim}"></b>`;
+  }
+  document.getElementById('pmotif').innerHTML=h;
+}
+function drawStep(){
+  clearInterval(timer);
+  if(ri>=R.steps.length){return drawDone();}
+  const st=R.steps[ri], w=W[st.w];
+  paintWorld(w);
+  /* step art: her raster sheet, my SVG, or none */
+  const box=document.getElementById('stepArt');
+  if(artMode==='png' && st.art){
+    box.className='stepart art-'+st.art; box.innerHTML=''; box.style.display='';
+  }else if(artMode==='svg' && st.svg){
+    box.className='svgart'; box.innerHTML=SVG[st.svg](w); box.style.display='';
+  }else{ box.style.display='none'; box.innerHTML=''; }
+  document.getElementById('stepLab').textContent=`STEP ${ri+1} OF ${R.steps.length}`;
+  document.getElementById('stepTitle').textContent=st.t;
+  document.getElementById('stepHint').textContent=st.h;
+  const go=document.getElementById('stepGo');
+  go.style.background=w.ac;
+  go.style.color=w.c1;
+  go.textContent='Done';
+  document.getElementById('stepSkip').style.display='';
+  document.getElementById('prog').innerHTML=R.steps.map((_,i)=>`<i class="${i<=ri?'done':''}"></i>`).join('');
+
+  const ring=document.getElementById('ring');
+  if(st.sec>0){
+    ring.style.display='';left=st.sec;
+    const fill=document.getElementById('ringFill');
+    tick();
+    timer=setInterval(()=>{
+      left--;tick();
+      if(left<=0){clearInterval(timer);go.textContent='Done ✓';}  /* it waits. never auto-advances. */
+    },1000);
+    function tick(){
+      const pct=left/st.sec;
+      fill.style.strokeDashoffset=(370.7*(1-pct)).toFixed(1);
+      document.getElementById('ringTime').textContent=
+        Math.floor(left/60)+':'+String(left%60).padStart(2,'0');
+    }
+  }else{ring.style.display='none';}
+}
+function drawDone(){
+  clearInterval(timer);
+  const w=W.night;
+  paintWorld(w);
+  document.getElementById('stepLab').textContent='COMPLETE';
+  document.getElementById('stepTitle').textContent='That is the whole ritual.';
+  document.getElementById('stepHint').textContent='Two new stars. Nothing else is being asked of you today.';
+  document.getElementById('ring').style.display='none';
+  const go=document.getElementById('stepGo');
+  go.textContent='Close';go.style.background=w.ac;go.style.color=w.c1;
+  document.getElementById('stepSkip').style.display='none';  /* satiety endpoint: one affordance */
+  document.getElementById('prog').innerHTML=R.steps.map(()=>'<i class="done"></i>').join('');
+  ri=-1;
+}
+document.getElementById('stepGo').onclick=()=>{
+  if(ri<0){document.getElementById('player').classList.remove('on');clearInterval(timer);return;}
+  ri++;drawStep();
+};
+document.getElementById('stepSkip').onclick=()=>{ri++;drawStep();};
+
+/* ============================================================
+   DEV BAR
+   ============================================================ */
+document.getElementById('devbar').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.s)season=b.dataset.s;
+  if(b.dataset.t)tod=b.dataset.t;
+  if(b.dataset.rain){raining=!raining;document.getElementById('rain').classList.toggle('on',raining);}
+  if(b.dataset.art){artMode=b.dataset.art;if(R&&ri>=0)drawStep();}
+  syncDev();applyTheme();
+});
+function syncDev(){
+  document.querySelectorAll('#devbar button').forEach(b=>{
+    b.classList.toggle('on',
+      (b.dataset.s&&b.dataset.s===season)||
+      (b.dataset.t&&b.dataset.t===tod)||
+      (b.dataset.art&&b.dataset.art===artMode)||
+      (b.dataset.rain&&raining));
+  });
+}
+document.getElementById('toggleDev').onclick=function(){
+  const d=document.getElementById('devbar');
+  d.classList.toggle('hide');
+  this.textContent=d.classList.contains('hide')?'show':'hide';
+};
+
+/* boot */
+buildStars();buildRain();buildConstellation();buildDots();buildPeople();
+syncDev();applyTheme();
+</script>
+</body>
+</html>
